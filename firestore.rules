@@ -78,8 +78,8 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Post requests: members can read and create; author or admin can update
-    match /groups/{groupId}/postRequests/{postId} {
+    // Posts: members can read and create; author or admin can update
+    match /groups/{groupId}/posts/{postId} {
       allow read: if isSignedIn() && isGroupMember(groupId);
       allow create: if isSignedIn() && isGroupMember(groupId);
       allow update: if isSignedIn() && isGroupMember(groupId) &&
@@ -88,7 +88,7 @@ service cloud.firestore {
     }
 
     // Offers on posts: members can read and create; post author or admin can update
-    match /groups/{groupId}/postRequests/{postId}/offers/{offerId} {
+    match /groups/{groupId}/posts/{postId}/offers/{offerId} {
       allow read: if isSignedIn() && isGroupMember(groupId);
       allow create: if isSignedIn() && isGroupMember(groupId);
       allow update: if isSignedIn() && isGroupMember(groupId);
@@ -119,8 +119,8 @@ service cloud.firestore {
         (isGroupAdmin(groupId) || resource.data.createdByUid == request.auth.uid);
     }
 
-    // User membership mirrors (for cross-group queries)
-    match /userMemberships/{uid}/{membershipId} {
+    // User membership mirrors (subcollection used by the app)
+    match /users/{uid}/memberships/{membershipId} {
       allow read, write: if isSignedIn() && request.auth.uid == uid;
     }
 
