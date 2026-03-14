@@ -19,7 +19,6 @@ import { listenUserProfiles } from '../../services/userProfiles';
 import { resolveDisplayName } from '../../utils/displayName';
 import { getFirebaseDb } from '../../services/firebase';
 import AppCard from '../../components/AppCard';
-import TagChip from '../../components/TagChip';
 import StatusPill from '../../components/StatusPill';
 import Screen from '../../components/Screen';
 import { SPACING, RADIUS } from '../../theme/spacing';
@@ -248,37 +247,56 @@ const GroupFeedScreen = () => {
       fallbackUid: item.authorUid,
     });
 
+    const timeAgo = formatRelative((item as any).createdAt);
+    const isOpen = (item.status ?? 'open') === 'open';
+
     return (
       <AppCard
         style={[styles.card, { backgroundColor: theme.colors.surface }]}
         onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
       >
-        <View style={styles.titleRow}>
-          <Pressable
-            onPress={() => navigation.navigate('UserProfile', { uid: item.authorUid })}
-            style={({ pressed }) => [
-              styles.namePill,
-              { backgroundColor: theme.colors.secondary, borderColor: theme.colors.outline },
-              pressed ? styles.namePillPressed : null,
-            ]}
-          >
-            <Text variant="titleSmall" style={[styles.nameText, { color: theme.colors.onSecondary }]}>
-              {name}
-            </Text>
-          </Pressable>
-          {item.authorGradeTag ? <TagChip label={item.authorGradeTag} /> : null}
-          {item.authorRole === 'admin' ? <Text style={styles.adminBadge}>Admin</Text> : null}
-        </View>
-        <Text variant="bodySmall" style={styles.subtle}>
-          {formatRelative((item as any).createdAt)}
-        </Text>
-        <Text variant="bodyMedium" style={{ marginTop: SPACING.xs }}>
-          {item.text}
-        </Text>
-        <View style={styles.tags}>
-          <TagChip label={`Audience: ${item.audienceTag || 'Anyone'}`} />
+        {/* Header row: name + meta on the right */}
+        <View style={styles.headerRow}>
+          <View style={styles.authorSection}>
+            <Pressable
+              onPress={() => navigation.navigate('UserProfile', { uid: item.authorUid })}
+              hitSlop={8}
+              style={({ pressed }) => pressed ? { opacity: 0.6 } : undefined}
+            >
+              <Text variant="titleMedium" style={styles.authorName}>
+                {name}
+              </Text>
+            </Pressable>
+            <View style={styles.metaRow}>
+              {item.authorGradeTag ? (
+                <Text variant="labelSmall" style={[styles.metaText, { color: theme.colors.outline }]}>
+                  {item.authorGradeTag}
+                </Text>
+              ) : null}
+              {item.authorRole === 'admin' ? (
+                <Text variant="labelSmall" style={styles.adminLabel}>Admin</Text>
+              ) : null}
+              {timeAgo ? (
+                <Text variant="labelSmall" style={[styles.metaText, { color: theme.colors.outline }]}>
+                  {item.authorGradeTag || item.authorRole === 'admin' ? '·' : ''} {timeAgo}
+                </Text>
+              ) : null}
+            </View>
+          </View>
           <StatusPill status={item.status ?? 'open'} />
         </View>
+
+        {/* Post body */}
+        <Text variant="bodyMedium" style={styles.postBody}>
+          {item.text}
+        </Text>
+
+        {/* Footer: subtle tags */}
+        {item.audienceTag ? (
+          <Text variant="labelSmall" style={[styles.audienceLabel, { color: theme.colors.outline }]}>
+            {item.audienceTag}
+          </Text>
+        ) : null}
       </AppCard>
     );
   };
@@ -347,7 +365,7 @@ const GroupFeedScreen = () => {
 const styles = StyleSheet.create({
   list: {
     paddingBottom: SPACING.xl,
-    gap: SPACING.md,
+    gap: SPACING.sm,
   },
   card: {
     borderRadius: RADIUS.lg,
@@ -355,46 +373,51 @@ const styles = StyleSheet.create({
   announcementCard: {
     marginBottom: SPACING.xs,
   },
-  titleRow: {
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  authorSection: {
+    flex: 1,
+    marginRight: SPACING.sm,
+  },
+  authorName: {
+    fontWeight: '700',
+    fontSize: 16,
+    letterSpacing: 0.1,
+  },
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs,
+    gap: 4,
+    marginTop: 2,
   },
-  namePill: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  metaText: {
+    fontSize: 12,
   },
-  namePillPressed: {
-    opacity: 0.8,
-  },
-  nameText: {
+  adminLabel: {
+    color: '#6366f1',
     fontWeight: '600',
+    fontSize: 12,
+  },
+  postBody: {
+    marginTop: SPACING.sm,
+    lineHeight: 20,
+  },
+  audienceLabel: {
+    marginTop: SPACING.sm,
+    fontSize: 12,
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tags: {
-    marginTop: SPACING.sm,
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    flexWrap: 'wrap',
-  },
   fab: {
     position: 'absolute',
     right: 16,
     bottom: 16,
-  },
-  adminBadge: {
-    backgroundColor: '#e0e7ff',
-    color: '#312e81',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.md,
-    fontSize: 12,
   },
   error: {
     color: '#b91c1c',
@@ -406,11 +429,12 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     paddingHorizontal: SPACING.xs,
-    paddingVertical: SPACING.xs,
-    color: '#4b5563',
-  },
-  subtle: {
+    paddingVertical: SPACING.sm,
     color: '#6b7280',
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });
 

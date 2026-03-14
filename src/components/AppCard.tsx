@@ -15,16 +15,16 @@ const AppCard = ({ style, children, ...props }: Props) => {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: RADIUS.lg,
-    marginVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+    marginVertical: 0,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   content: {
-    padding: SPACING.lg,
+    padding: SPACING.md,
   },
 });
 
