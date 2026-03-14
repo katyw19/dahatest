@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import { Card, IconButton, Text, useTheme, FAB, Button, TextInput } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
@@ -18,10 +18,11 @@ import type { Membership } from '../../models/membership';
 import { listenUserProfiles } from '../../services/userProfiles';
 import { resolveDisplayName } from '../../utils/displayName';
 import { getFirebaseDb } from '../../services/firebase';
-import AppCard from '../../components/AppCard';
 import StatusPill from '../../components/StatusPill';
 import Screen from '../../components/Screen';
 import { SPACING, RADIUS } from '../../theme/spacing';
+
+const AVATAR_SIZE = 44;
 
 const formatRelative = (dateValue: any) => {
   const date = dateValue?.toDate ? dateValue.toDate() : null;
@@ -237,6 +238,12 @@ const GroupFeedScreen = () => {
     );
   };
 
+  const getInitials = (displayName: string) => {
+    const parts = displayName.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return displayName.slice(0, 2).toUpperCase();
+  };
+
   const renderPostCard = (item: PostRequest) => {
     const member = memberMap[item.authorUid];
     const profile = profileMap[item.authorUid];
@@ -246,58 +253,98 @@ const GroupFeedScreen = () => {
       lastName: member?.lastName || profile?.lastName || item.authorLastName,
       fallbackUid: item.authorUid,
     });
-
+    const photoURL = profile?.photoURL;
     const timeAgo = formatRelative((item as any).createdAt);
-    const isOpen = (item.status ?? 'open') === 'open';
+
+    // Build the subtitle pieces: grade · Admin · 3h ago
+    const subtitleParts: string[] = [];
+    if (item.authorGradeTag) subtitleParts.push(item.authorGradeTag);
+    if (item.authorRole === 'admin') subtitleParts.push('Admin');
+    if (timeAgo) subtitleParts.push(timeAgo);
 
     return (
-      <AppCard
-        style={[styles.card, { backgroundColor: theme.colors.surface }]}
+      <Pressable
         onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
+        style={({ pressed }) => [
+          styles.postRow,
+          { borderBottomColor: theme.colors.outlineVariant ?? theme.colors.outline },
+          pressed && { backgroundColor: theme.colors.surfaceVariant ?? '#f5f5f5' },
+        ]}
       >
-        {/* Header row: name + meta on the right */}
-        <View style={styles.headerRow}>
-          <View style={styles.authorSection}>
-            <Pressable
-              onPress={() => navigation.navigate('UserProfile', { uid: item.authorUid })}
-              hitSlop={8}
-              style={({ pressed }) => pressed ? { opacity: 0.6 } : undefined}
-            >
-              <Text variant="titleMedium" style={styles.authorName}>
-                {name}
+        {/* Avatar */}
+        <Pressable
+          onPress={() => navigation.navigate('UserProfile', { uid: item.authorUid })}
+          hitSlop={4}
+        >
+          {photoURL ? (
+            <Image source={{ uri: photoURL }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatarFallback, { backgroundColor: theme.colors.primary }]}>
+              <Text style={[styles.avatarInitials, { color: theme.colors.onPrimary }]}>
+                {getInitials(name)}
               </Text>
-            </Pressable>
-            <View style={styles.metaRow}>
-              {item.authorGradeTag ? (
-                <Text variant="labelSmall" style={[styles.metaText, { color: theme.colors.outline }]}>
-                  {item.authorGradeTag}
-                </Text>
+            </View>
+          )}
+        </Pressable>
+
+        {/* Content */}
+        <View style={styles.postContent}>
+          {/* Name row */}
+          <View style={styles.nameRow}>
+            <View style={styles.nameGroup}>
+              <Pressable
+                onPress={() => navigation.navigate('UserProfile', { uid: item.authorUid })}
+                hitSlop={4}
+              >
+                <Text style={styles.displayName} numberOfLines={1}>{name}</Text>
+              </Pressable>
+              <Text style={[styles.subtitle, { color: theme.colors.outline }]} numberOfLines={1}>
+                {subtitleParts.join(' · ')}
+              </Text>
+            </View>
+            <StatusPill status={item.status ?? 'open'} />
+          </View>
+
+          {/* Post text */}
+          <Text style={styles.postText}>{item.text}</Text>
+
+          {/* Post photo */}
+          {item.photoUrl ? (
+            <Image
+              source={{ uri: item.photoUrl }}
+              style={[styles.postImage, { borderColor: theme.colors.outlineVariant ?? theme.colors.outline }]}
+              resizeMode="cover"
+            />
+          ) : null}
+
+          {/* Tags row */}
+          {(item.category || item.audienceTag || item.size) ? (
+            <View style={styles.tagsRow}>
+              {item.category ? (
+                <View style={[styles.tag, { backgroundColor: theme.colors.secondaryContainer ?? theme.colors.surface }]}>
+                  <Text style={[styles.tagText, { color: theme.colors.onSecondaryContainer ?? theme.colors.onSurface }]}>
+                    {item.category}
+                  </Text>
+                </View>
               ) : null}
-              {item.authorRole === 'admin' ? (
-                <Text variant="labelSmall" style={styles.adminLabel}>Admin</Text>
+              {item.size ? (
+                <View style={[styles.tag, { backgroundColor: theme.colors.secondaryContainer ?? theme.colors.surface }]}>
+                  <Text style={[styles.tagText, { color: theme.colors.onSecondaryContainer ?? theme.colors.onSurface }]}>
+                    {item.size}
+                  </Text>
+                </View>
               ) : null}
-              {timeAgo ? (
-                <Text variant="labelSmall" style={[styles.metaText, { color: theme.colors.outline }]}>
-                  {item.authorGradeTag || item.authorRole === 'admin' ? '·' : ''} {timeAgo}
-                </Text>
+              {item.audienceTag ? (
+                <View style={[styles.tag, { backgroundColor: theme.colors.secondaryContainer ?? theme.colors.surface }]}>
+                  <Text style={[styles.tagText, { color: theme.colors.onSecondaryContainer ?? theme.colors.onSurface }]}>
+                    {item.audienceTag}
+                  </Text>
+                </View>
               ) : null}
             </View>
-          </View>
-          <StatusPill status={item.status ?? 'open'} />
+          ) : null}
         </View>
-
-        {/* Post body */}
-        <Text variant="bodyMedium" style={styles.postBody}>
-          {item.text}
-        </Text>
-
-        {/* Footer: subtle tags */}
-        {item.audienceTag ? (
-          <Text variant="labelSmall" style={[styles.audienceLabel, { color: theme.colors.outline }]}>
-            {item.audienceTag}
-          </Text>
-        ) : null}
-      </AppCard>
+      </Pressable>
     );
   };
 
@@ -313,13 +360,16 @@ const GroupFeedScreen = () => {
         data={sortedPosts}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
-          <View style={{ gap: SPACING.sm, marginBottom: SPACING.sm }}>
+          <View style={styles.listHeader}>
             <TextInput
               placeholder="Search requests…"
               mode="outlined"
+              dense
               value={searchQuery}
               onChangeText={setSearchQuery}
               style={{ backgroundColor: theme.colors.surface }}
+              outlineStyle={{ borderRadius: RADIUS.xl }}
+              left={<TextInput.Icon icon="magnify" />}
               right={
                 searchQuery ? (
                   <TextInput.Icon icon="close" onPress={() => setSearchQuery('')} />
@@ -336,7 +386,11 @@ const GroupFeedScreen = () => {
         renderItem={({ item, index }) => (
           <>
             {index === firstBorrowedIndex && firstBorrowedIndex !== -1 ? (
-              <Text style={styles.sectionLabel}>Borrowed (closed)</Text>
+              <View style={[styles.sectionDivider, { borderBottomColor: theme.colors.outlineVariant ?? theme.colors.outline }]}>
+                <Text style={[styles.sectionLabel, { color: theme.colors.outline }]}>
+                  Borrowed
+                </Text>
+              </View>
             ) : null}
             {renderPostCard(item)}
           </>
@@ -345,16 +399,25 @@ const GroupFeedScreen = () => {
           styles.list,
           sortedPosts.length === 0 && styles.emptyContainer,
         ]}
-        ListEmptyComponent={<Text variant="bodyMedium">No requests yet. Be the first to ask!</Text>}
+        ListEmptyComponent={
+          <View style={styles.emptyContent}>
+            <Text variant="titleMedium" style={{ color: theme.colors.outline }}>
+              No requests yet
+            </Text>
+            <Text variant="bodyMedium" style={{ color: theme.colors.outline, marginTop: 4 }}>
+              Be the first to ask for something!
+            </Text>
+          </View>
+        }
       />
 
       <FAB
         icon="plus"
         onPress={() => navigation.navigate('CreatePost')}
-        label="New Request"
+        label="Request"
         style={[
           styles.fab,
-          { backgroundColor: theme.colors.primary }, // ✅ forces theme color
+          { backgroundColor: theme.colors.primary },
         ]}
         color={theme.colors.onPrimary}
       />
@@ -364,50 +427,96 @@ const GroupFeedScreen = () => {
 
 const styles = StyleSheet.create({
   list: {
-    paddingBottom: SPACING.xl,
+    paddingBottom: 80,
+  },
+  listHeader: {
+    padding: SPACING.md,
     gap: SPACING.sm,
   },
-  card: {
-    borderRadius: RADIUS.lg,
+  postRow: {
+    flexDirection: 'row',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  avatar: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    marginRight: 12,
+  },
+  avatarFallback: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  postContent: {
+    flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  nameGroup: {
+    flex: 1,
+    marginRight: 8,
+  },
+  displayName: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  subtitle: {
+    fontSize: 13,
+    marginTop: 1,
+  },
+  postText: {
+    fontSize: 15,
+    lineHeight: 21,
+    marginTop: 6,
+  },
+  postImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: RADIUS.md,
+    marginTop: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 10,
+  },
+  tag: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  tagText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   announcementCard: {
     marginBottom: SPACING.xs,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+  sectionDivider: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  authorSection: {
-    flex: 1,
-    marginRight: SPACING.sm,
-  },
-  authorName: {
-    fontWeight: '700',
-    fontSize: 16,
-    letterSpacing: 0.1,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-  },
-  metaText: {
-    fontSize: 12,
-  },
-  adminLabel: {
-    color: '#6366f1',
+  sectionLabel: {
+    fontSize: 13,
     fontWeight: '600',
-    fontSize: 12,
-  },
-  postBody: {
-    marginTop: SPACING.sm,
-    lineHeight: 20,
-  },
-  audienceLabel: {
-    marginTop: SPACING.sm,
-    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   center: {
     flex: 1,
@@ -427,14 +536,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  sectionLabel: {
-    paddingHorizontal: SPACING.xs,
-    paddingVertical: SPACING.sm,
-    color: '#6b7280',
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  emptyContent: {
+    alignItems: 'center',
+    paddingTop: 60,
   },
 });
 
