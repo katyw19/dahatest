@@ -1,6 +1,5 @@
 import { StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
-import { SPACING } from '../theme/spacing';
 
 type Props = {
   status: 'open' | 'borrowed';
@@ -9,11 +8,23 @@ type Props = {
 const StatusPill = ({ status }: Props) => {
   const theme = useTheme();
   const isOpen = status === 'open';
-  const bg = isOpen ? theme.colors.primary : theme.colors.outline;
-  const fg = isOpen ? theme.colors.onPrimary : theme.colors.onSurface;
   return (
-    <View style={[styles.pill, { backgroundColor: bg }]}>
-      <Text variant="labelSmall" style={{ color: fg }}>
+    <View
+      style={[
+        styles.pill,
+        {
+          backgroundColor: isOpen ? `${theme.colors.primary}14` : '#F0F0F0',
+          borderColor: isOpen ? theme.colors.primary : '#D1D1D6',
+        },
+      ]}
+    >
+      <Text
+        variant="labelSmall"
+        style={{
+          color: isOpen ? theme.colors.primary : '#8E8E93',
+          fontWeight: '600',
+        }}
+      >
         {isOpen ? 'Open' : 'Borrowed'}
       </Text>
     </View>
@@ -22,9 +33,10 @@ const StatusPill = ({ status }: Props) => {
 
 const styles = StyleSheet.create({
   pill: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 999,
+    borderWidth: 1,
     alignSelf: 'flex-start',
   },
 });

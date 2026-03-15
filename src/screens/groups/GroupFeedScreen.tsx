@@ -295,8 +295,9 @@ const GroupFeedScreen = () => {
               <Pressable
                 onPress={() => navigation.navigate('UserProfile', { uid: item.authorUid })}
                 hitSlop={4}
+                style={({ pressed }) => pressed && { opacity: 0.6 }}
               >
-                <Text style={styles.displayName} numberOfLines={1}>{name}</Text>
+                <Text style={[styles.displayName, { color: theme.colors.primary }]} numberOfLines={1}>{name}</Text>
               </Pressable>
               <Text style={[styles.subtitle, { color: theme.colors.outline }]} numberOfLines={1}>
                 {subtitleParts.join(' · ')}
@@ -436,7 +437,7 @@ const styles = StyleSheet.create({
   postRow: {
     flexDirection: 'row',
     paddingHorizontal: SPACING.md,
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   avatar: {
@@ -479,8 +480,8 @@ const styles = StyleSheet.create({
   },
   postText: {
     fontSize: 15,
-    lineHeight: 21,
-    marginTop: 6,
+    lineHeight: 22,
+    marginTop: 8,
   },
   postImage: {
     width: '100%',
@@ -493,7 +494,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginTop: 10,
+    marginTop: 12,
   },
   tag: {
     paddingHorizontal: 8,

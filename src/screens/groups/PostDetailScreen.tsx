@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text, useTheme } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { collection, doc, onSnapshot } from 'firebase/firestore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
@@ -15,9 +16,21 @@ import { useLayoutEffect } from 'react';
 import type { Membership } from '../../models/membership';
 import { listenUserProfiles } from '../../services/userProfiles';
 import { resolveDisplayName } from '../../utils/displayName';
-import AppCard from '../../components/AppCard';
-import TagChip from '../../components/TagChip';
 import { RADIUS, SPACING } from '../../theme/spacing';
+
+const AVATAR_SIZE = 48;
+
+const formatRelative = (dateValue: any) => {
+  const date = dateValue?.toDate ? dateValue.toDate() : null;
+  if (!date) return '';
+  const diff = Date.now() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+};
 
 type Props = NativeStackScreenProps<GroupStackParamList, 'PostDetail'>;
 
@@ -37,7 +50,6 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
   const [memberMap, setMemberMap] = useState<Record<string, Membership>>({});
   const [profileMap, setProfileMap] = useState<Record<string, any>>({});
 
-  // ✅ IMPORTANT: compute derived values BEFORE any early returns
   const uid = user?.uid ?? '';
   const offersSafe = offers ?? [];
 
@@ -66,6 +78,8 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
     lastName: authorMember?.lastName || authorProfile?.lastName || post?.authorLastName,
     fallbackUid: post?.authorUid,
   });
+  const photoURL = authorProfile?.photoURL;
+
   const acceptedLenderName = acceptedOffer
     ? resolveDisplayName({
         displayName:
@@ -80,6 +94,8 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
         fallbackUid: acceptedOffer.lenderUid,
       })
     : '';
+
+  const timeAgo = formatRelative((post as any)?.createdAt);
 
   useEffect(() => {
     if (!currentGroup) {
@@ -215,59 +231,187 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
     );
   }
 
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  const subtitleParts: string[] = [];
+  if (post.authorGradeTag) subtitleParts.push(post.authorGradeTag);
+  if (post.authorRole === 'admin') subtitleParts.push('Admin');
+  if (timeAgo) subtitleParts.push(timeAgo);
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={styles.scrollContent}
     >
-      <Text variant="headlineSmall" style={styles.title}>
-        Request
-      </Text>
+      {/* ── Author header ────────────────────────────── */}
+      <View style={styles.authorRow}>
+        <Pressable
+          onPress={() => navigation.navigate('UserProfile', { uid: post.authorUid })}
+          hitSlop={6}
+        >
+          {photoURL ? (
+            <Image source={{ uri: photoURL }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatarFallback, { backgroundColor: theme.colors.primary }]}>
+              <Text style={styles.avatarInitials}>{getInitials(displayName)}</Text>
+            </View>
+          )}
+        </Pressable>
 
-      <AppCard style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-        <View style={styles.row}>
-          <Pressable onPress={() => navigation.navigate('UserProfile', { uid: post.authorUid })}>
-            <Text variant="bodyMedium" style={styles.authorName}>
-              {displayName}
+        <View style={styles.authorInfo}>
+          <Pressable
+            onPress={() => navigation.navigate('UserProfile', { uid: post.authorUid })}
+            hitSlop={4}
+            style={({ pressed }) => pressed && { opacity: 0.6 }}
+          >
+            <Text style={[styles.authorName, { color: theme.colors.primary }]}>{displayName}</Text>
+          </Pressable>
+          <Text style={[styles.authorMeta, { color: '#8E8E93' }]}>
+            {subtitleParts.join(' · ')}
+          </Text>
+        </View>
+
+        {/* Status pill */}
+        <View
+          style={[
+            styles.statusBadge,
+            {
+              backgroundColor: isBorrowed ? '#F0F0F0' : `${theme.colors.primary}14`,
+              borderColor: isBorrowed ? '#D1D1D6' : theme.colors.primary,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.statusText,
+              { color: isBorrowed ? '#8E8E93' : theme.colors.primary },
+            ]}
+          >
+            {isBorrowed ? 'Borrowed' : 'Open'}
+          </Text>
+        </View>
+      </View>
+
+      {/* ── Post body ────────────────────────────────── */}
+      <Text style={[styles.postBody, { color: theme.colors.onBackground }]}>{post.text}</Text>
+
+      {/* ── Photo ────────────────────────────────────── */}
+      {post.photoUrl ? (
+        <Image
+          source={{ uri: post.photoUrl }}
+          style={[styles.postImage, { borderColor: theme.colors.outline }]}
+          resizeMode="cover"
+        />
+      ) : null}
+
+      {/* ── Tags ─────────────────────────────────────── */}
+      {(post.category || post.audienceTag || post.size || post.neededBy) ? (
+        <View style={styles.tagsRow}>
+          {post.category ? (
+            <View style={[styles.tag, { backgroundColor: theme.colors.secondary }]}>
+              <Text style={[styles.tagLabel, { color: theme.colors.onSecondary }]}>
+                {post.category}
+              </Text>
+            </View>
+          ) : null}
+          {post.size ? (
+            <View style={[styles.tag, { backgroundColor: theme.colors.secondary }]}>
+              <Text style={[styles.tagLabel, { color: theme.colors.onSecondary }]}>
+                Size {post.size}
+              </Text>
+            </View>
+          ) : null}
+          {post.audienceTag ? (
+            <View style={[styles.tag, { backgroundColor: theme.colors.secondary }]}>
+              <Text style={[styles.tagLabel, { color: theme.colors.onSecondary }]}>
+                {post.audienceTag}
+              </Text>
+            </View>
+          ) : null}
+          {post.neededBy ? (
+            <View style={[styles.tag, { backgroundColor: theme.colors.secondary }]}>
+              <MaterialCommunityIcons name="clock-outline" size={12} color={theme.colors.onSecondary} />
+              <Text style={[styles.tagLabel, { color: theme.colors.onSecondary }]}>
+                Need by {post.neededBy}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
+      {/* ── Divider ──────────────────────────────────── */}
+      <View style={[styles.divider, { backgroundColor: theme.colors.outline }]} />
+
+      {/* ── Accepted offer info ──────────────────────── */}
+      {acceptedOffer ? (
+        <View style={styles.acceptedRow}>
+          <MaterialCommunityIcons name="handshake-outline" size={18} color={theme.colors.primary} />
+          <Text style={[styles.acceptedText, { color: theme.colors.onSurface }]}>
+            Lending from <Text style={{ fontWeight: '700' }}>{acceptedLenderName}</Text>
+          </Text>
+        </View>
+      ) : null}
+
+      {/* ── Action buttons ───────────────────────────── */}
+      {acceptedOffer && threadId && (isAuthor || user?.uid === acceptedOffer.lenderUid) ? (
+        <Pressable
+          onPress={() => navigation.navigate('ChatThread', { threadId })}
+          style={({ pressed }) => [
+            styles.primaryBtn,
+            { backgroundColor: theme.colors.primary, opacity: pressed ? 0.85 : 1 },
+          ]}
+        >
+          <MaterialCommunityIcons name="chat-outline" size={18} color={theme.colors.onPrimary} />
+          <Text style={[styles.primaryBtnText, { color: theme.colors.onPrimary }]}>Open Chat</Text>
+        </Pressable>
+      ) : null}
+
+      {!isAuthor && !isBorrowed ? (
+        alreadyOffered ? (
+          <View style={styles.infoRow}>
+            <MaterialCommunityIcons name="check-circle-outline" size={18} color="#8E8E93" />
+            <Text style={styles.infoText}>You already made an offer on this request.</Text>
+          </View>
+        ) : (
+          <Pressable
+            onPress={() => navigation.navigate('OfferCreate', { postId })}
+            disabled={!currentMembership}
+            style={({ pressed }) => [
+              styles.primaryBtn,
+              { backgroundColor: theme.colors.primary, opacity: pressed ? 0.85 : 1 },
+            ]}
+          >
+            <MaterialCommunityIcons name="hand-heart-outline" size={18} color={theme.colors.onPrimary} />
+            <Text style={[styles.primaryBtnText, { color: theme.colors.onPrimary }]}>
+              I can lend this
             </Text>
           </Pressable>
-          {post.authorRole === 'admin' ? <Text style={styles.adminTag}>Admin</Text> : null}
-        </View>
-        <Text variant="bodySmall" style={styles.subtle}>
-          {post.authorGradeTag ? `${post.authorGradeTag} • ` : ''}
-          Audience: {post.audienceTag || 'Anyone'}
-        </Text>
+        )
+      ) : null}
 
-        <Text variant="titleMedium" style={styles.text}>
-          {post.text}
-        </Text>
-
-        <View style={styles.tags}>
-          {post.category ? <TagChip label={`Category: ${post.category}`} /> : null}
-          {post.size ? <TagChip label={`Size: ${post.size}`} /> : null}
-          {post.neededBy ? <TagChip label={`Needed by: ${post.neededBy}`} /> : null}
-        </View>
-
-        {post.photoUrl ? <Image source={{ uri: post.photoUrl }} style={styles.image} /> : null}
-
-        <Text style={[styles.statusLabel, { color: post.status === 'borrowed' ? '#6b7280' : theme.colors.primary }]}>
-          {post.status === 'borrowed' ? 'Borrowed' : 'Open'}
-        </Text>
-
-        {acceptedOffer ? (
-          <Text variant="bodySmall">
-            Accepted offer: {acceptedLenderName}
+      {isAuthor ? (
+        <Pressable
+          onPress={() =>
+            navigation.navigate('OffersList', { postId, postAuthorUid: post.authorUid })
+          }
+          style={({ pressed }) => [
+            styles.outlineBtn,
+            {
+              borderColor: theme.colors.primary,
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}
+        >
+          <MaterialCommunityIcons name="gift-outline" size={18} color={theme.colors.primary} />
+          <Text style={[styles.outlineBtnText, { color: theme.colors.primary }]}>
+            See Offers ({offersSafe.length})
           </Text>
-        ) : null}
-        {acceptedOffer && threadId && (isAuthor || user?.uid === acceptedOffer.lenderUid) ? (
-          <Button
-            mode="contained"
-            onPress={() => navigation.navigate('ChatThread', { threadId })}
-          >
-            Open Chat
-          </Button>
-        ) : null}
-      </AppCard>
+        </Pressable>
+      ) : null}
 
       {offerError ? (
         <Text style={styles.error} variant="bodySmall">
@@ -275,35 +419,11 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
         </Text>
       ) : null}
 
-      {!isAuthor && !isBorrowed ? (
-        alreadyOffered ? (
-          <Text style={styles.subtle}>You already made an offer on this request.</Text>
-        ) : (
-          <Button
-            mode="contained"
-            onPress={() => navigation.navigate('OfferCreate', { postId })}
-            disabled={!currentMembership}
-          >
-            I can lend this
-          </Button>
-        )
-      ) : null}
-
-      {isAuthor ? (
-        <Button
-          mode="outlined"
-          onPress={() =>
-            navigation.navigate('OffersList', { postId, postAuthorUid: post.authorUid })
-          }
-        >
-          See Offers
-        </Button>
-      ) : null}
-
       {offeredSuccess ? (
-        <Text style={styles.success} variant="bodySmall">
-          Offer sent!
-        </Text>
+        <View style={styles.successRow}>
+          <MaterialCommunityIcons name="check-circle" size={18} color="#34C759" />
+          <Text style={styles.successText}>Offer sent!</Text>
+        </View>
       ) : null}
     </ScrollView>
   );
@@ -311,31 +431,161 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: SPACING.lg, gap: SPACING.md },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  title: { fontWeight: '700' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  card: {
+  scrollContent: {
     padding: SPACING.lg,
-    gap: SPACING.md,
+    paddingBottom: 40,
+    gap: 16,
   },
-  authorName: { fontWeight: '700' },
-  adminTag: { color: '#4b5563', fontSize: 12 },
-  text: { marginVertical: SPACING.sm },
-  image: { width: '100%', height: 240, borderRadius: RADIUS.lg },
-  subtle: { color: '#6b7280' },
-  error: { color: '#b91c1c' },
-  success: { color: '#15803d' },
-  tags: {
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+
+  /* Author header */
+  authorRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
+    alignItems: 'center',
   },
-  statusLabel: {
+  avatar: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+  },
+  avatarFallback: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  authorInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  authorName: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  authorMeta: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  statusText: {
     fontSize: 12,
     fontWeight: '600',
-    marginTop: SPACING.xs,
   },
+
+  /* Post body */
+  postBody: {
+    fontSize: 17,
+    lineHeight: 25,
+  },
+
+  /* Image */
+  postImage: {
+    width: '100%',
+    height: 240,
+    borderRadius: RADIUS.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+
+  /* Tags */
+  tagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  tagLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+
+  /* Divider */
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: 4,
+  },
+
+  /* Accepted offer */
+  acceptedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  acceptedText: {
+    fontSize: 14,
+  },
+
+  /* Buttons */
+  primaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: RADIUS.md,
+  },
+  primaryBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  outlineBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+  },
+  outlineBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  /* Info / success */
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  infoText: {
+    color: '#8E8E93',
+    fontSize: 14,
+  },
+  successRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  successText: {
+    color: '#34C759',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  error: {
+    color: '#b91c1c',
+  },
+
+  /* Header icon */
   headerIcon: {
     width: 36,
     height: 36,
