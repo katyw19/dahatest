@@ -417,46 +417,58 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
     >
       {/* REVIEW MODAL */}
       <Portal>
-        <Dialog visible={reviewOpen} dismissable={false}>
-          <Dialog.Title>{reviewCopy.title}</Dialog.Title>
-          <Dialog.Content>
+        <Dialog visible={reviewOpen} dismissable={false} style={styles.reviewDialog}>
+          <Dialog.Content style={styles.reviewContent}>
+            <Text variant="headlineSmall" style={styles.reviewTitle}>
+              {reviewCopy.title}
+            </Text>
+
             {reviewError ? <Text style={styles.error}>{reviewError}</Text> : null}
 
-            <Button
-              mode={reviewOutcome === 'returned_same' ? 'contained' : 'outlined'}
-              onPress={() => setReviewOutcome('returned_same')}
-              style={styles.optionBtn}
-            >
-              {reviewCopy.same}
-            </Button>
+            <View style={styles.reviewOptions}>
+              <Button
+                mode={reviewOutcome === 'returned_same' ? 'contained' : 'outlined'}
+                onPress={() => setReviewOutcome('returned_same')}
+                style={styles.reviewOptionBtn}
+                contentStyle={styles.reviewOptionContent}
+                labelStyle={styles.reviewOptionLabel}
+              >
+                {reviewCopy.same}
+              </Button>
 
-            <Button
-              mode={reviewOutcome === 'minor_damage' ? 'contained' : 'outlined'}
-              onPress={() => setReviewOutcome('minor_damage')}
-              style={styles.optionBtn}
-            >
-              {reviewCopy.minor}
-            </Button>
+              <Button
+                mode={reviewOutcome === 'minor_damage' ? 'contained' : 'outlined'}
+                onPress={() => setReviewOutcome('minor_damage')}
+                style={styles.reviewOptionBtn}
+                contentStyle={styles.reviewOptionContent}
+                labelStyle={styles.reviewOptionLabel}
+              >
+                {reviewCopy.minor}
+              </Button>
 
-            <Button
-              mode={reviewOutcome === 'major_damage' ? 'contained' : 'outlined'}
-              onPress={() => setReviewOutcome('major_damage')}
-              style={styles.optionBtn}
-            >
-              {reviewCopy.major}
-            </Button>
+              <Button
+                mode={reviewOutcome === 'major_damage' ? 'contained' : 'outlined'}
+                onPress={() => setReviewOutcome('major_damage')}
+                style={styles.reviewOptionBtn}
+                contentStyle={styles.reviewOptionContent}
+                labelStyle={styles.reviewOptionLabel}
+              >
+                {reviewCopy.major}
+              </Button>
+            </View>
 
             <PaperTextInput
-              label="Optional note"
+              placeholder="Optional note"
               mode="outlined"
               multiline
               value={reviewNote}
               onChangeText={setReviewNote}
-              style={{ marginTop: 10 }}
+              style={styles.reviewNoteInput}
+              dense
             />
           </Dialog.Content>
 
-          <Dialog.Actions>
+          <Dialog.Actions style={styles.reviewActions}>
             <Button onPress={handleReviewCancel} disabled={reviewSubmitting}>
               Cancel
             </Button>
@@ -464,7 +476,7 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
               mode="contained"
               onPress={handleReviewSubmit}
               loading={reviewSubmitting}
-              disabled={reviewSubmitting}
+              disabled={!reviewOutcome || reviewSubmitting}
             >
               Submit
             </Button>
@@ -603,6 +615,15 @@ const styles = StyleSheet.create({
     margin: SPACING.lg,
   },
   optionBtn: { marginTop: SPACING.sm },
+  reviewDialog: { marginHorizontal: 20 },
+  reviewContent: { paddingTop: 24, paddingBottom: 8 },
+  reviewTitle: { fontWeight: '700', marginBottom: 16 },
+  reviewOptions: { gap: 10 },
+  reviewOptionBtn: { borderRadius: 12 },
+  reviewOptionContent: { paddingVertical: 6 },
+  reviewOptionLabel: { fontSize: 15 },
+  reviewNoteInput: { marginTop: 16 },
+  reviewActions: { paddingHorizontal: 16, paddingBottom: 12 },
   error: { color: '#b91c1c', marginBottom: 8 },
   headerIcon: {
     width: 36,
