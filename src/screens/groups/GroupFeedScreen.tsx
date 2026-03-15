@@ -297,9 +297,9 @@ const GroupFeedScreen = () => {
                 hitSlop={4}
                 style={({ pressed }) => pressed && { opacity: 0.6 }}
               >
-                <Text style={[styles.displayName, { color: theme.colors.primary }]} numberOfLines={1}>{name}</Text>
+                <Text style={[styles.displayName, { color: '#1C1C1E' }]} numberOfLines={1}>{name}</Text>
               </Pressable>
-              <Text style={[styles.subtitle, { color: theme.colors.outline }]} numberOfLines={1}>
+              <Text style={[styles.subtitle, { color: '#6B7280' }]} numberOfLines={1}>
                 {subtitleParts.join(' · ')}
               </Text>
             </View>
@@ -388,7 +388,7 @@ const GroupFeedScreen = () => {
           <>
             {index === firstBorrowedIndex && firstBorrowedIndex !== -1 ? (
               <View style={[styles.sectionDivider, { borderBottomColor: theme.colors.outlineVariant ?? theme.colors.outline }]}>
-                <Text style={[styles.sectionLabel, { color: theme.colors.outline }]}>
+                <Text style={[styles.sectionLabel, { color: '#6B7280' }]}>
                   Borrowed
                 </Text>
               </View>

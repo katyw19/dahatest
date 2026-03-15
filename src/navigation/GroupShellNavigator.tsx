@@ -29,6 +29,10 @@ import EditProfileScreen from '../screens/groups/EditProfileScreen';
 import UserProfileScreen from '../screens/groups/UserProfileScreen';
 import SettingsScreen from '../screens/groups/SettingsScreen';
 import ThemePickerScreen from '../screens/groups/ThemePickerScreen';
+import ChangePasswordScreen from '../screens/groups/ChangePasswordScreen';
+import NotificationSettingsScreen from '../screens/groups/NotificationSettingsScreen';
+import PrivacySettingsScreen from '../screens/groups/PrivacySettingsScreen';
+import AboutScreen from '../screens/groups/AboutScreen';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { IconButton, useTheme } from 'react-native-paper';
 
@@ -66,6 +70,10 @@ export type GroupStackParamList = {
   EditProfile: undefined;
   Settings: undefined;
   ThemePicker: undefined;
+  ChangePassword: undefined;
+  NotificationSettings: undefined;
+  PrivacySettings: undefined;
+  About: undefined;
   UserProfile: { uid: string };
   ReportCreate: {
     type: 'post' | 'thread';
@@ -284,6 +292,26 @@ const ProfileStackScreens = () => {
         name="ThemePicker"
         component={ThemePickerScreen}
         options={{ title: 'Theme' }}
+      />
+      <ProfileStack.Screen
+        name="ChangePassword"
+        component={ChangePasswordScreen}
+        options={{ title: 'Change Password' }}
+      />
+      <ProfileStack.Screen
+        name="NotificationSettings"
+        component={NotificationSettingsScreen}
+        options={{ title: 'Notifications' }}
+      />
+      <ProfileStack.Screen
+        name="PrivacySettings"
+        component={PrivacySettingsScreen}
+        options={{ title: 'Privacy' }}
+      />
+      <ProfileStack.Screen
+        name="About"
+        component={AboutScreen}
+        options={{ title: 'About' }}
       />
 
       {currentMembership?.role === 'admin' ? (
