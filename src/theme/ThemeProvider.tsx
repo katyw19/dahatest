@@ -47,7 +47,11 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         storedTheme === 'mint' ||
         storedTheme === 'sunset' ||
         storedTheme === 'lavender' ||
-        storedTheme === 'peach'
+        storedTheme === 'peach' ||
+        storedTheme === 'ocean' ||
+        storedTheme === 'berry' ||
+        storedTheme === 'sage' ||
+        storedTheme === 'mocha'
       ) {
         setThemeNameState(storedTheme);
       }

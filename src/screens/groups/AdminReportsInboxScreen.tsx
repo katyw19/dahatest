@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
-import { Card, SegmentedButtons, Text, useTheme } from 'react-native-paper';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { SegmentedButtons, Text, useTheme } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
 import { useGroupContext } from './GroupProvider';
 import { listenReportsForAdmin } from '../../services/reports';
 import type { ReportStatus } from '../../models/report';
 import { formatDistanceToNow } from 'date-fns';
+import Screen from '../../components/Screen';
+import { SPACING, RADIUS } from '../../theme/spacing';
 
 type Props = NativeStackScreenProps<GroupStackParamList, 'AdminReportsInbox'>;
 
@@ -30,40 +33,72 @@ const AdminReportsInboxScreen = ({ navigation }: Props) => {
     );
   }
 
+  const getStatusIcon = (status: string) => {
+    if (status === 'resolved') return 'check-circle-outline';
+    if (status === 'in_review') return 'progress-clock';
+    return 'alert-circle-outline';
+  };
+
+  const getStatusColor = (status: string) => {
+    if (status === 'resolved') return '#34C759';
+    if (status === 'in_review') return '#FF9500';
+    return theme.colors.primary;
+  };
+
   const renderItem = ({ item }: { item: any }) => {
     const created = (item.createdAt as any)?.toDate?.() ?? null;
     const when = created ? formatDistanceToNow(created, { addSuffix: true }) : '';
-    const badge =
-      item.status === 'resolved'
-        ? 'Resolved'
-        : item.status === 'in_review'
-        ? 'In review'
-        : 'Open';
-    const assigned = item.assignedToName || item.assignedToUid || '';
-    const target = item.target?.targetName || item.target?.targetUid || '';
+    const statusColor = getStatusColor(item.status);
+    const target = item.target?.targetName || '';
+    const reporter = item.createdByName || item.createdByUid || '';
+
     return (
-      <Card style={styles.card} onPress={() => navigation.navigate('AdminReportDetail', { reportId: item.id })}>
-        <Card.Title title={`${item.reason} • ${item.type}`} subtitle={when} />
-        <Card.Content>
-          <Text variant="bodySmall">Reporter: {item.createdByName || item.createdByUid}</Text>
-          {target ? <Text variant="bodySmall">Target: {target}</Text> : null}
-          {assigned ? <Text variant="bodySmall">Assigned: {assigned}</Text> : null}
-          <Text style={styles.badge}>{badge}</Text>
-          {item.evidence?.postTextSnippet ? (
-            <Text variant="bodySmall" numberOfLines={2}>
-              {item.evidence.postTextSnippet}
+      <Pressable
+        onPress={() => navigation.navigate('AdminReportDetail', { reportId: item.id })}
+        style={({ pressed }) => [
+          styles.reportRow,
+          { borderBottomColor: theme.colors.outline },
+          pressed && { backgroundColor: `${theme.colors.primary}08` },
+        ]}
+      >
+        <View style={[styles.iconWrap, { backgroundColor: `${statusColor}18` }]}>
+          <MaterialCommunityIcons name={getStatusIcon(item.status)} size={20} color={statusColor} />
+        </View>
+
+        <View style={styles.reportContent}>
+          <View style={styles.topRow}>
+            <Text style={[styles.reason, { color: theme.colors.onSurface }]} numberOfLines={1}>
+              {item.reason}
+            </Text>
+            <View style={[styles.typeBadge, { backgroundColor: theme.colors.secondary }]}>
+              <Text style={[styles.typeText, { color: theme.colors.onSecondary }]}>{item.type}</Text>
+            </View>
+          </View>
+
+          {target ? (
+            <Text style={[styles.meta, { color: '#8E8E93' }]} numberOfLines={1}>
+              Target: {target}
             </Text>
           ) : null}
-        </Card.Content>
-      </Card>
+
+          <Text style={[styles.meta, { color: '#8E8E93' }]} numberOfLines={1}>
+            {reporter} · {when}
+          </Text>
+
+          {item.evidence?.postTextSnippet ? (
+            <Text style={[styles.snippet, { color: theme.colors.onSurface }]} numberOfLines={1}>
+              "{item.evidence.postTextSnippet}"
+            </Text>
+          ) : null}
+        </View>
+
+        <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
+      </Pressable>
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text variant="headlineSmall" style={styles.title}>
-        Reports
-      </Text>
+    <Screen>
       <SegmentedButtons
         value={statusFilter}
         onValueChange={(v) => setStatusFilter(v as ReportStatus)}
@@ -72,30 +107,82 @@ const AdminReportsInboxScreen = ({ navigation }: Props) => {
           { value: 'in_review', label: 'In Review' },
           { value: 'resolved', label: 'Resolved' },
         ]}
+        style={styles.segmented}
       />
       <FlatList
         data={reports}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.muted}>No reports in this status.</Text>}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={
+          <View style={styles.emptyWrap}>
+            <MaterialCommunityIcons name="inbox-outline" size={40} color="#C7C7CC" />
+            <Text style={styles.emptyText}>No reports in this status.</Text>
+          </View>
+        }
       />
-    </View>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 12, gap: 10 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  title: { fontWeight: '700' },
-  card: { marginTop: 8 },
-  muted: { color: '#6b7280', marginTop: 12 },
-  badge: {
-    backgroundColor: '#e5e7eb',
+  segmented: { marginBottom: SPACING.sm },
+  list: { paddingBottom: SPACING.xl },
+  reportRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  reportContent: {
+    flex: 1,
+    gap: 2,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  reason: {
+    fontSize: 15,
+    fontWeight: '600',
+    flexShrink: 1,
+  },
+  typeBadge: {
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginTop: 6,
-    alignSelf: 'flex-start',
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  typeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  meta: {
+    fontSize: 13,
+  },
+  snippet: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  emptyWrap: {
+    alignItems: 'center',
+    paddingTop: 60,
+    gap: 8,
+  },
+  emptyText: {
+    color: '#8E8E93',
+    fontSize: 15,
   },
 });
 
