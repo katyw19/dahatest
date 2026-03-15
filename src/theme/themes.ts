@@ -8,7 +8,11 @@ export type ThemeName =
   | 'mint'
   | 'sunset'
   | 'lavender'
-  | 'peach';
+  | 'peach'
+  | 'ocean'
+  | 'berry'
+  | 'sage'
+  | 'mocha';
 
 const headingFont = 'Fredoka_600SemiBold';
 const bodyFont = 'Nunito_400Regular';
@@ -61,9 +65,9 @@ const palette = {
   },
   blossom: {
     light: {
-      background: '#FAFAFA',
+      background: '#FEF5F8',
       surface: '#FFFFFF',
-      primary: '#D4688E',
+      primary: '#C9567E',
       secondary: '#F5E6EC',
       outline: '#DDD0D5',
       onSurface: '#2C2628',
@@ -73,9 +77,9 @@ const palette = {
       error: '#C94040',
     },
     dark: {
-      background: '#FAFAFA',
+      background: '#FEF5F8',
       surface: '#FFFFFF',
-      primary: '#D4688E',
+      primary: '#C9567E',
       secondary: '#F5E6EC',
       outline: '#DDD0D5',
       onSurface: '#2C2628',
@@ -215,6 +219,110 @@ const palette = {
       error: '#D04545',
     },
   },
+  ocean: {
+    light: {
+      background: '#F0F7FA',
+      surface: '#FFFFFF',
+      primary: '#2B8A9E',
+      secondary: '#D8EFF4',
+      outline: '#B8D9E2',
+      onSurface: '#1A2F36',
+      onBackground: '#1A2F36',
+      onPrimary: '#ffffff',
+      onSecondary: '#1A2F36',
+      error: '#D04545',
+    },
+    dark: {
+      background: '#F0F7FA',
+      surface: '#FFFFFF',
+      primary: '#2B8A9E',
+      secondary: '#D8EFF4',
+      outline: '#B8D9E2',
+      onSurface: '#1A2F36',
+      onBackground: '#1A2F36',
+      onPrimary: '#ffffff',
+      onSecondary: '#1A2F36',
+      error: '#D04545',
+    },
+  },
+  berry: {
+    light: {
+      background: '#F9F3F8',
+      surface: '#FFFFFF',
+      primary: '#8B3A7C',
+      secondary: '#EDE0EB',
+      outline: '#D4C1D2',
+      onSurface: '#2E1D2B',
+      onBackground: '#2E1D2B',
+      onPrimary: '#ffffff',
+      onSecondary: '#3D2A3A',
+      error: '#D04545',
+    },
+    dark: {
+      background: '#F9F3F8',
+      surface: '#FFFFFF',
+      primary: '#8B3A7C',
+      secondary: '#EDE0EB',
+      outline: '#D4C1D2',
+      onSurface: '#2E1D2B',
+      onBackground: '#2E1D2B',
+      onPrimary: '#ffffff',
+      onSecondary: '#3D2A3A',
+      error: '#D04545',
+    },
+  },
+  sage: {
+    light: {
+      background: '#F4F6F2',
+      surface: '#FFFFFF',
+      primary: '#6B8F6B',
+      secondary: '#E2EBE0',
+      outline: '#C5D4C2',
+      onSurface: '#1E291E',
+      onBackground: '#1E291E',
+      onPrimary: '#ffffff',
+      onSecondary: '#2C3B2C',
+      error: '#D04545',
+    },
+    dark: {
+      background: '#F4F6F2',
+      surface: '#FFFFFF',
+      primary: '#6B8F6B',
+      secondary: '#E2EBE0',
+      outline: '#C5D4C2',
+      onSurface: '#1E291E',
+      onBackground: '#1E291E',
+      onPrimary: '#ffffff',
+      onSecondary: '#2C3B2C',
+      error: '#D04545',
+    },
+  },
+  mocha: {
+    light: {
+      background: '#F7F4F1',
+      surface: '#FFFFFF',
+      primary: '#8B6F5C',
+      secondary: '#EBE3DC',
+      outline: '#D4C8BD',
+      onSurface: '#2C241E',
+      onBackground: '#2C241E',
+      onPrimary: '#ffffff',
+      onSecondary: '#3D342C',
+      error: '#D04545',
+    },
+    dark: {
+      background: '#F7F4F1',
+      surface: '#FFFFFF',
+      primary: '#8B6F5C',
+      secondary: '#EBE3DC',
+      outline: '#D4C8BD',
+      onSurface: '#2C241E',
+      onBackground: '#2C241E',
+      onPrimary: '#ffffff',
+      onSecondary: '#3D342C',
+      error: '#D04545',
+    },
+  },
 };
 
 type ThemeOptions = {
@@ -222,6 +330,9 @@ type ThemeOptions = {
   accentColor?: string | null;
 };
 
+/**
+ * Derive all MD3 color slots from the palette so NO purple defaults bleed through.
+ */
 export const getTheme = (themeName: ThemeName, options: ThemeOptions): MD3Theme => {
   const base = options.isDark ? MD3DarkTheme : MD3LightTheme;
   const swatch = options.isDark ? palette[themeName].dark : palette[themeName].light;
@@ -232,16 +343,55 @@ export const getTheme = (themeName: ThemeName, options: ThemeOptions): MD3Theme 
     roundness: 18,
     colors: {
       ...base.colors,
+      // Core
       primary,
-      secondary: swatch.secondary,
-      background: swatch.background,
-      surface: swatch.surface,
-      outline: swatch.outline,
-      onSurface: swatch.onSurface,
-      onBackground: swatch.onBackground,
       onPrimary: swatch.onPrimary,
-      onSecondary: swatch.onSecondary,
+      primaryContainer: swatch.secondary,       // tinted container → use secondary
+      onPrimaryContainer: swatch.onSurface,
+      // Secondary
+      secondary: primary,                        // keep secondary = primary for consistency
+      onSecondary: swatch.onPrimary,
+      secondaryContainer: swatch.secondary,
+      onSecondaryContainer: swatch.onSecondary,
+      // Tertiary (was defaulting to purple)
+      tertiary: primary,
+      onTertiary: swatch.onPrimary,
+      tertiaryContainer: swatch.secondary,
+      onTertiaryContainer: swatch.onSecondary,
+      // Surfaces
+      background: swatch.background,
+      onBackground: swatch.onBackground,
+      surface: swatch.surface,
+      onSurface: swatch.onSurface,
+      surfaceVariant: swatch.secondary,
+      onSurfaceVariant: swatch.onSurface,
+      surfaceDisabled: `${swatch.outline}44`,
+      onSurfaceDisabled: `${swatch.onSurface}66`,
+      // Outline
+      outline: swatch.outline,
+      outlineVariant: `${swatch.outline}88`,
+      // Inverse (for snackbars etc)
+      inverseSurface: swatch.onSurface,
+      inverseOnSurface: swatch.surface,
+      inversePrimary: swatch.secondary,
+      // Elevation tints
+      elevation: {
+        level0: 'transparent',
+        level1: swatch.surface,
+        level2: swatch.surface,
+        level3: swatch.surface,
+        level4: swatch.surface,
+        level5: swatch.surface,
+      },
+      // Backdrop + error
+      backdrop: `${swatch.onSurface}33`,
       error: swatch.error,
+      onError: '#ffffff',
+      errorContainer: '#FDE7E7',
+      onErrorContainer: '#8B1A1A',
+      // Scrim
+      scrim: '#000000',
+      shadow: '#000000',
     },
     fonts: configureFonts({ config: fontConfig }),
   };
@@ -292,5 +442,29 @@ export const THEME_PREVIEWS: Record<
     background: palette.peach.light.background,
     surface: palette.peach.light.surface,
     primary: palette.peach.light.primary,
+  },
+  ocean: {
+    label: 'Ocean',
+    background: palette.ocean.light.background,
+    surface: palette.ocean.light.surface,
+    primary: palette.ocean.light.primary,
+  },
+  berry: {
+    label: 'Berry',
+    background: palette.berry.light.background,
+    surface: palette.berry.light.surface,
+    primary: palette.berry.light.primary,
+  },
+  sage: {
+    label: 'Sage',
+    background: palette.sage.light.background,
+    surface: palette.sage.light.surface,
+    primary: palette.sage.light.primary,
+  },
+  mocha: {
+    label: 'Mocha',
+    background: palette.mocha.light.background,
+    surface: palette.mocha.light.surface,
+    primary: palette.mocha.light.primary,
   },
 };

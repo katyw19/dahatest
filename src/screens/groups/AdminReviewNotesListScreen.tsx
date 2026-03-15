@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
-import { Card, Text, ToggleButton, useTheme } from 'react-native-paper';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Text, ToggleButton, useTheme } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
 import { useGroupContext } from './GroupProvider';
@@ -11,13 +12,10 @@ import type { Membership } from '../../models/membership';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { getFirebaseDb } from '../../services/firebase';
 import { resolveDisplayName } from '../../utils/displayName';
+import Screen from '../../components/Screen';
+import { SPACING } from '../../theme/spacing';
 
 type Props = NativeStackScreenProps<GroupStackParamList, 'AdminReviewNotesList'>;
-
-const shortUid = (uid?: string) => {
-  if (!uid) return '';
-  return uid.length <= 8 ? uid : `${uid.slice(0, 6)}…`;
-};
 
 const nonEmpty = (v: unknown) => {
   if (typeof v !== 'string') return '';
@@ -25,14 +23,40 @@ const nonEmpty = (v: unknown) => {
   return t.length ? t : '';
 };
 
+const outcomeIcon = (outcome?: string): string => {
+  switch (outcome) {
+    case 'returned_same':
+      return 'check-circle-outline';
+    case 'minor_damage':
+      return 'alert-circle-outline';
+    case 'major_damage':
+      return 'close-circle-outline';
+    default:
+      return 'help-circle-outline';
+  }
+};
+
+const outcomeColor = (outcome?: string): string => {
+  switch (outcome) {
+    case 'returned_same':
+      return '#34C759';
+    case 'minor_damage':
+      return '#FF9500';
+    case 'major_damage':
+      return '#FF3B30';
+    default:
+      return '#8E8E93';
+  }
+};
+
 const outcomeLabel = (outcome?: string) => {
   switch (outcome) {
     case 'returned_same':
-      return 'returned_same';
+      return 'Returned same';
     case 'minor_damage':
-      return 'minor_damage';
+      return 'Minor damage';
     case 'major_damage':
-      return 'major_damage';
+      return 'Major damage';
     default:
       return outcome ?? '';
   }
@@ -102,76 +126,65 @@ const AdminReviewNotesListScreen = ({ navigation }: Props) => {
         ? formatDistanceToNow(item.createdAt.toDate(), { addSuffix: true })
         : '';
 
-    // Robust note preview (handles empty string + noteText vs note)
-    const noteText =
-      nonEmpty(item.noteText) ||
-      nonEmpty(item.note) ||
-      null;
+    const noteText = nonEmpty(item.noteText) || nonEmpty(item.note) || null;
+    const notePreview = noteText
+      ? noteText.length > 80 ? `${noteText.slice(0, 80)}…` : noteText
+      : null;
 
-    const notePreview = noteText ? (noteText.length > 80 ? `${noteText.slice(0, 80)}…` : noteText) : '(no note)';
+    const reviewer = resolveDisplayName({
+      displayName: memberMap[item.reviewerUid]?.displayName || profileMap[item.reviewerUid]?.displayName,
+      firstName: memberMap[item.reviewerUid]?.firstName || profileMap[item.reviewerUid]?.firstName,
+      lastName: memberMap[item.reviewerUid]?.lastName || profileMap[item.reviewerUid]?.lastName,
+      fallbackUid: item.reviewerUid,
+    });
 
-    // Robust names (handles "" stored in Firestore)
-    const reviewerName = nonEmpty(item.reviewerName);
-    const targetName = nonEmpty(item.targetName);
+    const target = resolveDisplayName({
+      displayName: memberMap[item.targetUid]?.displayName || profileMap[item.targetUid]?.displayName,
+      firstName: memberMap[item.targetUid]?.firstName || profileMap[item.targetUid]?.firstName,
+      lastName: memberMap[item.targetUid]?.lastName || profileMap[item.targetUid]?.lastName,
+      fallbackUid: item.targetUid,
+    });
 
-    const reviewer =
-      resolveDisplayName({
-        displayName:
-          memberMap[item.reviewerUid]?.displayName ||
-          profileMap[item.reviewerUid]?.displayName,
-        firstName:
-          memberMap[item.reviewerUid]?.firstName ||
-          profileMap[item.reviewerUid]?.firstName,
-        lastName:
-          memberMap[item.reviewerUid]?.lastName ||
-          profileMap[item.reviewerUid]?.lastName,
-        fallbackUid: item.reviewerUid,
-      }) || reviewerName || (item.reviewerUid ? shortUid(item.reviewerUid) : '');
-
-    const target =
-      resolveDisplayName({
-        displayName:
-          memberMap[item.targetUid]?.displayName ||
-          profileMap[item.targetUid]?.displayName,
-        firstName:
-          memberMap[item.targetUid]?.firstName ||
-          profileMap[item.targetUid]?.firstName,
-        lastName:
-          memberMap[item.targetUid]?.lastName ||
-          profileMap[item.targetUid]?.lastName,
-        fallbackUid: item.targetUid,
-      }) || targetName || (item.targetUid ? shortUid(item.targetUid) : '');
+    const oColor = outcomeColor(item.outcome);
 
     return (
-      <Card
-        style={styles.card}
-        onPress={() => {
-          // IMPORTANT: pass the whole note object so detail always has access to noteText immediately.
-          navigation.navigate('AdminReviewNoteDetail', { note: item } as any);
-        }}
+      <Pressable
+        onPress={() => navigation.navigate('AdminReviewNoteDetail', { note: item } as any)}
+        style={({ pressed }) => [
+          styles.row,
+          { borderBottomColor: theme.colors.outline },
+          pressed && { backgroundColor: `${theme.colors.primary}08` },
+        ]}
       >
-        <Card.Title
-          title={`${reviewer} → ${target}`}
-          titleNumberOfLines={1}
-          subtitle={`${outcomeLabel(item.outcome)} • ${when}`}
-          subtitleNumberOfLines={1}
-          titleStyle={styles.titleText}
-        />
-        <Card.Content>
-          <Text variant="bodySmall" numberOfLines={2} style={styles.noteText}>
-            {notePreview}
+        <View style={[styles.iconWrap, { backgroundColor: `${oColor}18` }]}>
+          <MaterialCommunityIcons name={outcomeIcon(item.outcome) as any} size={20} color={oColor} />
+        </View>
+
+        <View style={styles.content}>
+          <Text style={[styles.names, { color: theme.colors.onSurface }]} numberOfLines={1}>
+            {reviewer} <Text style={styles.arrow}>→</Text> {target}
           </Text>
-        </Card.Content>
-      </Card>
+
+          <View style={styles.metaRow}>
+            <Text style={[styles.outcome, { color: oColor }]}>{outcomeLabel(item.outcome)}</Text>
+            <Text style={styles.dot}>·</Text>
+            <Text style={styles.time}>{when}</Text>
+          </View>
+
+          {notePreview ? (
+            <Text style={[styles.note, { color: theme.colors.onSurface }]} numberOfLines={2}>
+              {notePreview}
+            </Text>
+          ) : null}
+        </View>
+
+        <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
+      </Pressable>
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text variant="headlineSmall" style={styles.title}>
-        Review Notes
-      </Text>
-
+    <Screen>
       <ToggleButton.Row
         onValueChange={(value) => setOnlyNotes(value === 'notes')}
         value={onlyNotes ? 'notes' : 'all'}
@@ -184,20 +197,79 @@ const AdminReviewNotesListScreen = ({ navigation }: Props) => {
         data={notes}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.muted}>No review notes yet.</Text>}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={
+          <View style={styles.emptyWrap}>
+            <MaterialCommunityIcons name="note-outline" size={40} color="#C7C7CC" />
+            <Text style={styles.emptyText}>No review notes yet.</Text>
+          </View>
+        }
       />
-    </View>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 12, gap: 8 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  title: { fontWeight: '700' },
-  card: { marginTop: 8 },
-  titleText: { flexShrink: 1 },
-  noteText: { flexShrink: 1 },
-  muted: { color: '#6b7280', marginTop: 12 },
+  list: { paddingBottom: SPACING.xl, paddingTop: SPACING.sm },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  content: {
+    flex: 1,
+    gap: 2,
+  },
+  names: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  arrow: {
+    fontWeight: '400',
+    color: '#8E8E93',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  outcome: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  dot: {
+    color: '#8E8E93',
+    fontSize: 13,
+  },
+  time: {
+    color: '#8E8E93',
+    fontSize: 13,
+  },
+  note: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  emptyWrap: {
+    alignItems: 'center',
+    paddingTop: 60,
+    gap: 8,
+  },
+  emptyText: {
+    color: '#8E8E93',
+    fontSize: 15,
+  },
 });
 
 export default AdminReviewNotesListScreen;
