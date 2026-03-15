@@ -5,6 +5,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
   TextInput as RNTextInput,
   View,
@@ -198,13 +199,23 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
     setReviewNote('');
   };
 
-  // Nav helpers
+  // Nav helpers — walk up to the tab navigator
   const goToChatsList = () => {
-    navigation.getParent()?.navigate('ChatsTab' as never);
+    const tab = navigation.getParent()?.getParent?.() ?? navigation.getParent();
+    if (tab) {
+      tab.navigate('ChatsTab' as never);
+    } else {
+      navigation.goBack();
+    }
   };
 
   const goToFeed = () => {
-    navigation.getParent()?.navigate('FeedTab' as never);
+    const tab = navigation.getParent()?.getParent?.() ?? navigation.getParent();
+    if (tab) {
+      tab.navigate('FeedTab' as never);
+    } else {
+      navigation.goBack();
+    }
   };
 
   useLayoutEffect(() => {
@@ -418,69 +429,92 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
       {/* REVIEW MODAL */}
       <Portal>
         <Dialog visible={reviewOpen} dismissable={false} style={styles.reviewDialog}>
-          <Dialog.Content style={styles.reviewContent}>
-            <Text variant="headlineSmall" style={styles.reviewTitle}>
-              {reviewCopy.title}
-            </Text>
+          <View style={styles.reviewBody}>
+            <Text style={styles.reviewTitle}>{reviewCopy.title}</Text>
 
             {reviewError ? <Text style={styles.error}>{reviewError}</Text> : null}
 
-            <View style={styles.reviewOptions}>
-              <Button
-                mode={reviewOutcome === 'returned_same' ? 'contained' : 'outlined'}
-                onPress={() => setReviewOutcome('returned_same')}
-                style={styles.reviewOptionBtn}
-                contentStyle={styles.reviewOptionContent}
-                labelStyle={styles.reviewOptionLabel}
-              >
+            <Pressable
+              onPress={() => setReviewOutcome('returned_same')}
+              style={[
+                styles.reviewOption,
+                {
+                  backgroundColor: reviewOutcome === 'returned_same' ? theme.colors.primary : 'transparent',
+                  borderColor: reviewOutcome === 'returned_same' ? theme.colors.primary : theme.colors.outlineVariant ?? '#ddd',
+                },
+              ]}
+            >
+              <Text style={[
+                styles.reviewOptionText,
+                { color: reviewOutcome === 'returned_same' ? theme.colors.onPrimary : theme.colors.onSurface },
+              ]}>
                 {reviewCopy.same}
-              </Button>
+              </Text>
+            </Pressable>
 
-              <Button
-                mode={reviewOutcome === 'minor_damage' ? 'contained' : 'outlined'}
-                onPress={() => setReviewOutcome('minor_damage')}
-                style={styles.reviewOptionBtn}
-                contentStyle={styles.reviewOptionContent}
-                labelStyle={styles.reviewOptionLabel}
-              >
+            <Pressable
+              onPress={() => setReviewOutcome('minor_damage')}
+              style={[
+                styles.reviewOption,
+                {
+                  backgroundColor: reviewOutcome === 'minor_damage' ? theme.colors.primary : 'transparent',
+                  borderColor: reviewOutcome === 'minor_damage' ? theme.colors.primary : theme.colors.outlineVariant ?? '#ddd',
+                },
+              ]}
+            >
+              <Text style={[
+                styles.reviewOptionText,
+                { color: reviewOutcome === 'minor_damage' ? theme.colors.onPrimary : theme.colors.onSurface },
+              ]}>
                 {reviewCopy.minor}
-              </Button>
+              </Text>
+            </Pressable>
 
-              <Button
-                mode={reviewOutcome === 'major_damage' ? 'contained' : 'outlined'}
-                onPress={() => setReviewOutcome('major_damage')}
-                style={styles.reviewOptionBtn}
-                contentStyle={styles.reviewOptionContent}
-                labelStyle={styles.reviewOptionLabel}
-              >
+            <Pressable
+              onPress={() => setReviewOutcome('major_damage')}
+              style={[
+                styles.reviewOption,
+                {
+                  backgroundColor: reviewOutcome === 'major_damage' ? theme.colors.primary : 'transparent',
+                  borderColor: reviewOutcome === 'major_damage' ? theme.colors.primary : theme.colors.outlineVariant ?? '#ddd',
+                },
+              ]}
+            >
+              <Text style={[
+                styles.reviewOptionText,
+                { color: reviewOutcome === 'major_damage' ? theme.colors.onPrimary : theme.colors.onSurface },
+              ]}>
                 {reviewCopy.major}
-              </Button>
-            </View>
+              </Text>
+            </Pressable>
 
-            <PaperTextInput
-              placeholder="Optional note"
-              mode="outlined"
+            <RNTextInput
+              placeholder="Add a note (optional)"
+              placeholderTextColor="#9ca3af"
               multiline
               value={reviewNote}
               onChangeText={setReviewNote}
-              style={styles.reviewNoteInput}
-              dense
+              style={[styles.reviewNoteInput, { borderColor: theme.colors.outlineVariant ?? '#ddd', color: theme.colors.onSurface }]}
             />
-          </Dialog.Content>
 
-          <Dialog.Actions style={styles.reviewActions}>
-            <Button onPress={handleReviewCancel} disabled={reviewSubmitting}>
-              Cancel
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleReviewSubmit}
-              loading={reviewSubmitting}
-              disabled={!reviewOutcome || reviewSubmitting}
-            >
-              Submit
-            </Button>
-          </Dialog.Actions>
+            <View style={styles.reviewActionRow}>
+              <Pressable onPress={handleReviewCancel} disabled={reviewSubmitting} style={styles.reviewCancelBtn}>
+                <Text style={[styles.reviewCancelText, { color: theme.colors.outline }]}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleReviewSubmit}
+                disabled={!reviewOutcome || reviewSubmitting}
+                style={[
+                  styles.reviewSubmitBtn,
+                  { backgroundColor: !reviewOutcome || reviewSubmitting ? '#ccc' : theme.colors.primary },
+                ]}
+              >
+                <Text style={[styles.reviewSubmitText, { color: theme.colors.onPrimary }]}>
+                  {reviewSubmitting ? 'Submitting...' : 'Submit'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
         </Dialog>
       </Portal>
 
@@ -615,16 +649,65 @@ const styles = StyleSheet.create({
     margin: SPACING.lg,
   },
   optionBtn: { marginTop: SPACING.sm },
-  reviewDialog: { marginHorizontal: 20 },
-  reviewContent: { paddingTop: 24, paddingBottom: 8 },
-  reviewTitle: { fontWeight: '700', marginBottom: 16 },
-  reviewOptions: { gap: 10 },
-  reviewOptionBtn: { borderRadius: 12 },
-  reviewOptionContent: { paddingVertical: 6 },
-  reviewOptionLabel: { fontSize: 15 },
-  reviewNoteInput: { marginTop: 16 },
-  reviewActions: { paddingHorizontal: 16, paddingBottom: 12 },
-  error: { color: '#b91c1c', marginBottom: 8 },
+  reviewDialog: {
+    marginHorizontal: 24,
+    borderRadius: 20,
+    overflow: 'hidden',
+    padding: 0,
+  },
+  reviewBody: {
+    padding: 24,
+    gap: 12,
+  },
+  reviewTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  reviewOption: {
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  reviewOptionText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  reviewNoteInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    minHeight: 44,
+    marginTop: 4,
+  },
+  reviewActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 4,
+  },
+  reviewCancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  reviewCancelText: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  reviewSubmitBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+  },
+  reviewSubmitText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  error: { color: '#b91c1c', marginBottom: 4, textAlign: 'center', fontSize: 13 },
   headerIcon: {
     width: 36,
     height: 36,

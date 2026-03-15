@@ -8,7 +8,6 @@ import { BADGE_DEFINITIONS } from '../constants/badges';
 import { useAuth } from '../context/AuthContext';
 import { listenUserBadgeState } from '../services/badges';
 import Screen from '../components/Screen';
-import SectionHeader from '../components/SectionHeader';
 import { SPACING, RADIUS } from '../theme/spacing';
 
 const getColumns = () => {
@@ -151,8 +150,7 @@ const BadgesScreen = () => {
 
   return (
     <Screen>
-      <SectionHeader title="Badges" variant="headlineSmall" />
-      <SectionHeader title="Lending Ladder" variant="titleSmall" />
+      <Text variant="titleMedium" style={styles.sectionSubtitle}>Lending Ladder</Text>
       <FlatList
         data={BADGE_DEFINITIONS}
         numColumns={columns}
@@ -248,11 +246,12 @@ const BadgesScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  grid: { paddingBottom: SPACING.xl, marginTop: SPACING.sm },
+  sectionSubtitle: { fontWeight: '600', marginBottom: SPACING.sm, color: '#6b7280' },
+  grid: { paddingBottom: SPACING.xl },
   cardWrap: { padding: SPACING.xs },
-  card: { borderRadius: RADIUS.lg },
-  cardContent: { gap: SPACING.xs },
-  badgeTitle: { fontWeight: '600' },
+  card: { borderRadius: RADIUS.lg, overflow: 'hidden' },
+  cardContent: { gap: SPACING.xs, alignItems: 'center', paddingVertical: SPACING.md },
+  badgeTitle: { fontWeight: '600', textAlign: 'center' },
   iconWrap: {
     width: 48,
     height: 48,
