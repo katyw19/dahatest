@@ -1,130 +1,174 @@
-import { useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { Divider, Text, useTheme } from 'react-native-paper';
-import { useThemeSettings, THEME_PREVIEWS } from '../../theme';
-import type { ThemeName } from '../../theme';
-import AppCard from '../../components/AppCard';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, useTheme } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAuth } from '../../context/AuthContext';
 import Screen from '../../components/Screen';
-import { SPACING } from '../../theme/spacing';
+import { SPACING, RADIUS } from '../../theme/spacing';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
 
-const SettingsScreen = () => {
+type Props = NativeStackScreenProps<GroupStackParamList, 'Settings'>;
+
+type MenuItem = {
+  icon: string;
+  label: string;
+  description: string;
+  onPress: () => void;
+  danger?: boolean;
+};
+
+const SettingsScreen = ({ navigation }: Props) => {
   const theme = useTheme();
-  const { themeName, setThemeName } = useThemeSettings();
+  const { signOut } = useAuth();
 
-  const themeOptions = useMemo(
-    () =>
-      ['default', 'blossom', 'sky', 'mint', 'sunset', 'lavender', 'peach'] as ThemeName[],
-    []
+  const accountItems: MenuItem[] = [
+    {
+      icon: 'palette-outline',
+      label: 'Theme',
+      description: 'Change app colors and appearance',
+      onPress: () => navigation.navigate('ThemePicker'),
+    },
+    {
+      icon: 'lock-outline',
+      label: 'Change Password',
+      description: 'Update your account password',
+      onPress: () => navigation.navigate('ChangePassword' as any),
+    },
+    {
+      icon: 'account-edit-outline',
+      label: 'Edit Profile',
+      description: 'Update your name, photo, and bio',
+      onPress: () => navigation.navigate('EditProfile'),
+    },
+    {
+      icon: 'bell-outline',
+      label: 'Notifications',
+      description: 'Manage push notification preferences',
+      onPress: () => navigation.navigate('NotificationSettings' as any),
+    },
+  ];
+
+  const supportItems: MenuItem[] = [
+    {
+      icon: 'shield-check-outline',
+      label: 'Privacy',
+      description: 'Privacy policy and data settings',
+      onPress: () => navigation.navigate('PrivacySettings' as any),
+    },
+    {
+      icon: 'information-outline',
+      label: 'About',
+      description: 'App version and credits',
+      onPress: () => navigation.navigate('About' as any),
+    },
+  ];
+
+  const dangerItems: MenuItem[] = [
+    {
+      icon: 'logout',
+      label: 'Sign Out',
+      description: 'Sign out of your account',
+      danger: true,
+      onPress: () => {
+        Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign Out', style: 'destructive', onPress: () => signOut().catch(() => {}) },
+        ]);
+      },
+    },
+  ];
+
+  const renderSection = (title: string, items: MenuItem[]) => (
+    <View style={styles.section}>
+      <Text style={[styles.sectionTitle, { color: '#8E8E93' }]}>{title}</Text>
+      <View style={[styles.sectionCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
+        {items.map((item, i) => (
+          <Pressable
+            key={item.label}
+            onPress={item.onPress}
+            style={({ pressed }) => [
+              styles.menuItem,
+              pressed && { backgroundColor: `${theme.colors.primary}08` },
+              i < items.length - 1 && [styles.menuItemBorder, { borderBottomColor: theme.colors.outline }],
+            ]}
+          >
+            <View style={[styles.menuIcon, { backgroundColor: item.danger ? '#FF3B3014' : `${theme.colors.primary}14` }]}>
+              <MaterialCommunityIcons
+                name={item.icon as any}
+                size={20}
+                color={item.danger ? '#FF3B30' : theme.colors.primary}
+              />
+            </View>
+            <View style={styles.menuText}>
+              <Text style={[styles.menuLabel, { color: item.danger ? '#FF3B30' : '#1C1C1E' }]}>{item.label}</Text>
+              <Text style={styles.menuDesc}>{item.description}</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={18} color="#C7C7CC" />
+          </Pressable>
+        ))}
+      </View>
+    </View>
   );
 
   return (
     <Screen>
-      <Text variant="headlineSmall" style={styles.title}>
-        Settings
-      </Text>
-
-      <Text variant="titleMedium" style={styles.sectionTitle}>
-        Theme
-      </Text>
-      <View style={styles.themeGrid}>
-        {themeOptions.map((name) => {
-          const preview = THEME_PREVIEWS[name];
-          const selected = themeName === name;
-          return (
-            <Pressable key={name} onPress={() => setThemeName(name)} style={styles.themeItem}>
-              <AppCard
-                style={[
-                  styles.themeCard,
-                  {
-                    borderColor: selected ? theme.colors.primary : theme.colors.outline,
-                    borderWidth: selected ? 2 : 1,
-                    backgroundColor: preview.surface,
-                  },
-                ]}
-              >
-                <View style={styles.swatchRow}>
-                  <View
-                    style={[
-                      styles.swatch,
-                      { backgroundColor: preview.background, borderColor: theme.colors.outline },
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.swatch,
-                      { backgroundColor: preview.surface, borderColor: theme.colors.outline },
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.swatch,
-                      { backgroundColor: preview.primary, borderColor: theme.colors.outline },
-                    ]}
-                  />
-                </View>
-                <View style={styles.themeLabelRow}>
-                  <Text variant="titleSmall">{preview.label}</Text>
-                  {selected ? <Text style={styles.checkMark}>✓</Text> : null}
-                </View>
-              </AppCard>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <Divider style={styles.divider} />
-      <Text variant="bodySmall" style={styles.helper}>
-        Theme changes apply instantly and stay saved on this device.
-      </Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
+        {renderSection('Account', accountItems)}
+        {renderSection('Support', supportItems)}
+        {renderSection('', dangerItems)}
+      </ScrollView>
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  title: {
-    fontWeight: '700',
+  container: {
+    paddingBottom: SPACING.xl,
+  },
+  section: {
+    marginBottom: SPACING.md,
   },
   sectionTitle: {
-    marginTop: SPACING.sm,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+    paddingHorizontal: 4,
   },
-  divider: {
-    marginVertical: SPACING.md,
+  sectionCard: {
+    borderRadius: RADIUS.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
   },
-  themeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-  },
-  themeItem: {
-    width: '48%',
-  },
-  themeCard: {
-    padding: SPACING.md,
-    borderRadius: 12,
-  },
-  swatchRow: {
-    flexDirection: 'row',
-    gap: SPACING.xs,
-    marginBottom: SPACING.sm,
-  },
-  swatch: {
-    width: 18,
-    height: 18,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  themeLabelRow: {
+  menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: SPACING.md,
   },
-  checkMark: {
-    color: '#16a34a',
-    fontWeight: '700',
+  menuItemBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  helper: {
-    color: '#6b7280',
+  menuIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  menuText: {
+    flex: 1,
+  },
+  menuLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  menuDesc: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 1,
   },
 });
 

@@ -18,7 +18,7 @@ type Props = NativeStackScreenProps<GroupStackParamList, 'Profile'>;
 
 const ProfileTabScreen = ({ navigation }: Props) => {
   const theme = useTheme();
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   const { currentGroup, currentMembership } = useGroupContext();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -155,12 +155,6 @@ const ProfileTabScreen = ({ navigation }: Props) => {
           <View style={styles.buttonRow}>
             <Button mode="contained" onPress={() => navigation.navigate('EditProfile')}>
               Edit profile
-            </Button>
-            <Button mode="outlined" onPress={() => navigation.navigate('Settings')}>
-              Settings
-            </Button>
-            <Button mode="text" onPress={() => signOut().catch(() => {})}>
-              Sign out
             </Button>
           </View>
         </>
