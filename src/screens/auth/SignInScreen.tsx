@@ -35,8 +35,21 @@ const SignInScreen = () => {
     setError(null);
     try {
       await signIn(values.email, values.password);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign in failed.');
+    } catch (err: any) {
+      const code = err?.code ?? '';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
+        setError('Incorrect email or password. Please try again.');
+      } else if (code === 'auth/user-not-found') {
+        setError('No account found with that email.');
+      } else if (code === 'auth/too-many-requests') {
+        setError('Too many attempts. Please wait a moment and try again.');
+      } else if (code === 'auth/network-request-failed') {
+        setError('Network error. Check your connection and try again.');
+      } else if (code === 'auth/invalid-email') {
+        setError('Please enter a valid email address.');
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
     }
   };
 

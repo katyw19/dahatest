@@ -57,10 +57,18 @@ const SignUpScreen = () => {
     try {
       await signUp(values.email.trim(), values.password);
     } catch (err: any) {
-      setError(
-        err?.message ??
-          (typeof err === "string" ? err : "Sign up failed. Please try again.")
-      );
+      const code = err?.code ?? '';
+      if (code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists. Try signing in instead.');
+      } else if (code === 'auth/invalid-email') {
+        setError('Please enter a valid email address.');
+      } else if (code === 'auth/weak-password') {
+        setError('Password is too weak. Use at least 8 characters.');
+      } else if (code === 'auth/network-request-failed') {
+        setError('Network error. Check your connection and try again.');
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
