@@ -15,71 +15,36 @@ service cloud.firestore {
         get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Admin review notes: admins only read; write allowed for reviewer (to mirror) or admins
-    match /groups/{groupId}/adminReviewNotes/{noteId} {
-      allow read: if isSignedIn() && isGroupAdmin(groupId);
-      allow create, update: if isSignedIn() &&
-        isGroupMember(groupId) &&
-        (
-          isGroupAdmin(groupId) ||
-          (request.resource.data.reviewerUid == request.auth.uid)
-        );
-      allow delete: if false;
-    }
-
-    // Reports: members create, admins read/update
-    match /groups/{groupId}/reports/{reportId} {
-      allow create: if isSignedIn() && isGroupMember(groupId) &&
-        request.resource.data.createdByUid == request.auth.uid;
-      allow read, update: if isSignedIn() && isGroupAdmin(groupId);
-      allow delete: if false;
-    }
-
-    // Admin actions: admins can read and create/update; delete is forbidden (audit log)
-    match /groups/{groupId}/adminActions/{actionId} {
-      allow read: if isSignedIn() && isGroupAdmin(groupId);
-      allow create, update: if isSignedIn() && isGroupAdmin(groupId);
-      allow delete: if false;
-    }
-
-    // Members: admins can create/update (for approvals/removals); members can read own doc
-    match /groups/{groupId}/members/{uid} {
-      allow read: if isSignedIn() && isGroupMember(groupId);
-      allow create, update: if isSignedIn() && (isGroupAdmin(groupId) || request.auth.uid == uid);
-      allow delete: if false;
-    }
-
-    // Announcements: members read, admins write
-    match /groups/{groupId}/announcements/{announcementId} {
-      allow read: if isSignedIn() && isGroupMember(groupId);
-      allow create, update, delete: if isSignedIn() && isGroupAdmin(groupId);
-    }
-
-    // Reviews: participant can read/write own; admins can read all
-    match /groups/{groupId}/threads/{threadId}/reviews/{reviewerUid} {
-      allow create, update: if isSignedIn() && isGroupMember(groupId) && request.auth.uid == reviewerUid;
-      allow read: if isSignedIn() &&
-        (isGroupAdmin(groupId) || request.auth.uid == reviewerUid);
-      allow delete: if false;
-    }
-
-    // Groups: members can read; admins can update; authenticated users can create
+    // ── Groups ──────────────────────────────────────────────────────
+    // Any signed-in user can read (needed for join flow / invite lookup).
+    // Only admins can update; any authenticated user can create.
     match /groups/{groupId} {
-      allow read: if isSignedIn() && isGroupMember(groupId);
+      allow read: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn() && isGroupAdmin(groupId);
       allow delete: if false;
     }
 
-    // Join requests: authenticated users can create; admins can read/update
-    match /groups/{groupId}/joinRequests/{requestId} {
-      allow create: if isSignedIn();
-      allow read, update: if isSignedIn() && isGroupAdmin(groupId);
+    // ── Members ─────────────────────────────────────────────────────
+    // Members can read all member docs in their group.
+    // Members can update their OWN doc OR another member's doc (trust score from reviews).
+    // Admins can create/update any member doc.
+    match /groups/{groupId}/members/{uid} {
+      allow read: if isSignedIn() && isGroupMember(groupId);
+      allow create: if isSignedIn() && (isGroupAdmin(groupId) || request.auth.uid == uid);
+      allow update: if isSignedIn() && isGroupMember(groupId);
       allow delete: if false;
     }
 
-    // Post requests: members can read and create; author or admin can update
-    match /groups/{groupId}/postRequests/{postId} {
+    // ── Join Requests ───────────────────────────────────────────────
+    match /groups/{groupId}/joinRequests/{requestId} {
+      allow create: if isSignedIn();
+      allow read, update: if isSignedIn() && (isGroupAdmin(groupId) || request.auth.uid == requestId);
+      allow delete: if false;
+    }
+
+    // ── Posts ────────────────────────────────────────────────────────
+    match /groups/{groupId}/posts/{postId} {
       allow read: if isSignedIn() && isGroupMember(groupId);
       allow create: if isSignedIn() && isGroupMember(groupId);
       allow update: if isSignedIn() && isGroupMember(groupId) &&
@@ -87,49 +52,84 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Offers on posts: members can read and create; post author or admin can update
-    match /groups/{groupId}/postRequests/{postId}/offers/{offerId} {
+    // ── Offers on Posts ─────────────────────────────────────────────
+    match /groups/{groupId}/posts/{postId}/offers/{offerId} {
       allow read: if isSignedIn() && isGroupMember(groupId);
       allow create: if isSignedIn() && isGroupMember(groupId);
       allow update: if isSignedIn() && isGroupMember(groupId);
       allow delete: if false;
     }
 
-    // Threads (chat): participants can read/write; admins can read
+    // ── Threads (chat) ──────────────────────────────────────────────
     match /groups/{groupId}/threads/{threadId} {
       allow read: if isSignedIn() && isGroupMember(groupId);
       allow create: if isSignedIn() && isGroupMember(groupId);
-      allow update: if isSignedIn() && isGroupMember(groupId) &&
-        (resource.data.borrowerUid == request.auth.uid ||
-         resource.data.lenderUid == request.auth.uid ||
-         isGroupAdmin(groupId));
+      allow update: if isSignedIn() && isGroupMember(groupId);
       allow delete: if false;
     }
 
-    // Messages within threads: participants can read/create
+    // ── Messages ────────────────────────────────────────────────────
     match /groups/{groupId}/threads/{threadId}/messages/{messageId} {
       allow read: if isSignedIn() && isGroupMember(groupId);
       allow create: if isSignedIn() && isGroupMember(groupId);
       allow update, delete: if false;
     }
 
-    // Reports: allow creator to read their own report
+    // ── Reviews ─────────────────────────────────────────────────────
+    match /groups/{groupId}/threads/{threadId}/reviews/{reviewerUid} {
+      allow create, update: if isSignedIn() && isGroupMember(groupId) && request.auth.uid == reviewerUid;
+      allow read: if isSignedIn() && isGroupMember(groupId);
+      allow delete: if false;
+    }
+
+    // ── Announcements ───────────────────────────────────────────────
+    match /groups/{groupId}/announcements/{announcementId} {
+      allow read: if isSignedIn() && isGroupMember(groupId);
+      allow create, update, delete: if isSignedIn() && isGroupAdmin(groupId);
+    }
+
+    // ── Reports ─────────────────────────────────────────────────────
     match /groups/{groupId}/reports/{reportId} {
-      allow read: if isSignedIn() &&
+      allow create: if isSignedIn() && isGroupMember(groupId);
+      allow read, update: if isSignedIn() &&
         (isGroupAdmin(groupId) || resource.data.createdByUid == request.auth.uid);
+      allow delete: if false;
     }
 
-    // User membership mirrors (for cross-group queries)
-    match /userMemberships/{uid}/{membershipId} {
-      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    // ── Admin Actions (audit log) ───────────────────────────────────
+    match /groups/{groupId}/adminActions/{actionId} {
+      allow read: if isSignedIn() && isGroupAdmin(groupId);
+      allow create, update: if isSignedIn() && isGroupAdmin(groupId);
+      allow delete: if false;
     }
 
-    // User profile + badge stats
+    // ── Admin Review Notes ──────────────────────────────────────────
+    match /groups/{groupId}/adminReviewNotes/{noteId} {
+      allow read: if isSignedIn() && isGroupAdmin(groupId);
+      allow create, update: if isSignedIn() && isGroupMember(groupId);
+      allow delete: if false;
+    }
+
+    // ── User Profiles ───────────────────────────────────────────────
+    // Any signed-in user can read profiles (needed for display names/avatars).
+    // Only the owner can write their own profile.
     match /users/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // ── User Memberships Mirror ─────────────────────────────────────
+    match /users/{uid}/memberships/{membershipId} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if isSignedIn() && (request.auth.uid == uid || isGroupMember(membershipId));
+    }
+
+    // ── User Join Requests Mirror ───────────────────────────────────
+    match /users/{uid}/joinRequests/{groupId} {
       allow read, write: if isSignedIn() && request.auth.uid == uid;
     }
 
-    // Default deny; add other rules as needed for remaining collections.
+    // Default deny
     match /{document=**} {
       allow read, write: if false;
     }
