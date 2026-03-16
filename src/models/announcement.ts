@@ -1,3 +1,6 @@
+/** Map of emoji → array of UIDs who reacted */
+export type AnnouncementReactions = Record<string, string[]>;
+
 export type Announcement = {
   id: string;
   text: string;
@@ -6,4 +9,5 @@ export type Announcement = {
   createdByName?: string;
   pinned: boolean;
   expiresAt?: Date | null;
+  reactions?: AnnouncementReactions;
 };
