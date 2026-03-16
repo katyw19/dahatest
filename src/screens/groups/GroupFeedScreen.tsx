@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
-import { Card, IconButton, Text, useTheme, FAB, Button, TextInput } from 'react-native-paper';
+import { IconButton, Text, useTheme, FAB, Button, TextInput } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -212,29 +213,58 @@ const GroupFeedScreen = () => {
   const renderAnnouncement = (item: Announcement) => {
     const when = formatRelative((item as any).createdAt);
     return (
-      <Card key={item.id} style={styles.announcementCard} mode="outlined">
-        <Card.Title title="Announcement" subtitle={`${item.createdByName || ''} ${when}`} />
-        <Card.Content>
-          <Text variant="bodyMedium">{item.text}</Text>
-        </Card.Content>
+      <View
+        key={item.id}
+        style={[
+          styles.announcementWrap,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.outline,
+          },
+        ]}
+      >
+        {/* Header row */}
+        <View style={styles.annHeader}>
+          <View style={[styles.annIconWrap, { backgroundColor: `${theme.colors.primary}14` }]}>
+            <MaterialCommunityIcons name="bullhorn-outline" size={18} color={theme.colors.primary} />
+          </View>
+          <View style={styles.annHeaderText}>
+            <Text style={[styles.annLabel, { color: theme.colors.primary }]}>Announcement</Text>
+            <Text style={styles.annMeta}>
+              {item.createdByName || ''} · {when}
+            </Text>
+          </View>
+        </View>
+
+        {/* Body */}
+        <Text style={[styles.annBody, { color: '#1C1C1E' }]}>{item.text}</Text>
+
+        {/* Admin actions */}
         {currentMembership?.role === 'admin' ? (
-          <Card.Actions>
-            <Button
-              compact
+          <View style={styles.annActions}>
+            <Pressable
               onPress={() => currentGroup && unpinAnnouncement(currentGroup.id, item.id)}
+              style={({ pressed }) => [
+                styles.annBtn,
+                { borderColor: theme.colors.outline },
+                pressed && { opacity: 0.6 },
+              ]}
             >
-              Unpin
-            </Button>
-            <Button
-              compact
-              textColor="#b91c1c"
+              <Text style={[styles.annBtnText, { color: '#1C1C1E' }]}>Unpin</Text>
+            </Pressable>
+            <Pressable
               onPress={() => currentGroup && deleteAnnouncement(currentGroup.id, item.id)}
+              style={({ pressed }) => [
+                styles.annBtn,
+                { borderColor: '#FF3B30', backgroundColor: '#FFF5F5' },
+                pressed && { opacity: 0.6 },
+              ]}
             >
-              Delete
-            </Button>
-          </Card.Actions>
+              <Text style={[styles.annBtnText, { color: '#FF3B30' }]}>Delete</Text>
+            </Pressable>
+          </View>
         ) : null}
-      </Card>
+      </View>
     );
   };
 
@@ -505,8 +535,54 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  announcementCard: {
-    marginBottom: SPACING.xs,
+  announcementWrap: {
+    borderRadius: RADIUS.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: SPACING.md,
+    gap: 10,
+  },
+  annHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  annIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  annHeaderText: {
+    flex: 1,
+  },
+  annLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  annMeta: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 1,
+  },
+  annBody: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  annActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 2,
+  },
+  annBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  annBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   sectionDivider: {
     paddingHorizontal: SPACING.md,
