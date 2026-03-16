@@ -6,14 +6,12 @@ import { useNavigation } from '@react-navigation/native';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useGroupContext } from './GroupProvider';
-import { useAuth } from '../../context/AuthContext';
 import { listenPosts } from '../../services/posts';
 import type { PostRequest } from '../../models/postRequest';
 import {
   listenPinnedAnnouncements,
   unpinAnnouncement,
   deleteAnnouncement,
-  toggleAnnouncementReaction,
 } from '../../services/announcements';
 import type { Announcement } from '../../models/announcement';
 import { collection, onSnapshot } from 'firebase/firestore';
@@ -45,7 +43,6 @@ const GroupFeedScreen = () => {
   const theme = useTheme();
   const navigation = useNavigation<Nav>();
   const { currentGroup, currentMembership } = useGroupContext();
-  const { user } = useAuth();
 
   const [posts, setPosts] = useState<PostRequest[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -241,46 +238,6 @@ const GroupFeedScreen = () => {
 
         {/* Body */}
         <Text style={[styles.annBody, { color: '#1C1C1E' }]}>{item.text}</Text>
-
-        {/* Reactions */}
-        {(() => {
-          const QUICK_EMOJIS = ['❤️', '👍', '🔥', '😂', '👏'];
-          const reactions = (item as any).reactions ?? {};
-          const uid = user?.uid ?? '';
-          return (
-            <View style={styles.reactionsRow}>
-              {QUICK_EMOJIS.map((emoji) => {
-                const uids: string[] = reactions[emoji] ?? [];
-                const active = uids.includes(uid);
-                const count = uids.length;
-                return (
-                  <Pressable
-                    key={emoji}
-                    onPress={() => {
-                      if (!currentGroup || !uid) return;
-                      toggleAnnouncementReaction(currentGroup.id, item.id, emoji, uid, uids);
-                    }}
-                    style={({ pressed }) => [
-                      styles.reactionChip,
-                      {
-                        backgroundColor: active ? `${theme.colors.primary}18` : 'transparent',
-                        borderColor: active ? theme.colors.primary : theme.colors.outline,
-                      },
-                      pressed && { opacity: 0.6 },
-                    ]}
-                  >
-                    <Text style={styles.reactionEmoji}>{emoji}</Text>
-                    {count > 0 ? (
-                      <Text style={[styles.reactionCount, { color: active ? theme.colors.primary : '#8E8E93' }]}>
-                        {count}
-                      </Text>
-                    ) : null}
-                  </Pressable>
-                );
-              })}
-            </View>
-          );
-        })()}
 
         {/* Admin actions */}
         {currentMembership?.role === 'admin' ? (
@@ -611,27 +568,6 @@ const styles = StyleSheet.create({
   annBody: {
     fontSize: 15,
     lineHeight: 22,
-  },
-  reactionsRow: {
-    flexDirection: 'row',
-    gap: 6,
-    flexWrap: 'wrap',
-  },
-  reactionChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-    gap: 3,
-  },
-  reactionEmoji: {
-    fontSize: 14,
-  },
-  reactionCount: {
-    fontSize: 12,
-    fontWeight: '600',
   },
   annActions: {
     flexDirection: 'row',
