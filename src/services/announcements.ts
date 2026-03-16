@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { getFirebaseDb } from './firebase';
 import type { Announcement } from '../models/announcement';
 
@@ -41,4 +41,20 @@ export const unpinAnnouncement = async (groupId: string, id: string) => {
 export const deleteAnnouncement = async (groupId: string, id: string) => {
   const db = ensureDb();
   await deleteDoc(doc(db, `groups/${groupId}/announcements/${id}`));
+};
+
+/** Toggle a reaction emoji for the current user. */
+export const toggleAnnouncementReaction = async (
+  groupId: string,
+  announcementId: string,
+  emoji: string,
+  uid: string,
+  currentUids: string[]
+) => {
+  const db = ensureDb();
+  const ref = doc(db, `groups/${groupId}/announcements/${announcementId}`);
+  const already = currentUids.includes(uid);
+  await updateDoc(ref, {
+    [`reactions.${emoji}`]: already ? arrayRemove(uid) : arrayUnion(uid),
+  });
 };
