@@ -198,7 +198,12 @@ const ProfileTabScreen = ({ navigation }: Props) => {
         {/* ─── Quick Links ─── */}
         <View style={[styles.linksCard, { backgroundColor: theme.colors.surface }]}>
           <Pressable
-            onPress={() => navigation.navigate('Badges')}
+            onPress={() => {
+              const tab = navigation.getParent?.();
+              if (tab) {
+                tab.navigate('BadgesTab' as never);
+              }
+            }}
             style={({ pressed }) => [styles.linkRow, pressed && { backgroundColor: `${theme.colors.primary}08` }]}
           >
             <View style={[styles.linkIcon, { backgroundColor: '#FFD60A20' }]}>
