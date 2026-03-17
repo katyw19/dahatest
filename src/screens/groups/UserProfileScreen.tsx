@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, View } from 'react-native';
-import { Card, Text, useTheme } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { doc, onSnapshot } from 'firebase/firestore';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
@@ -9,8 +10,8 @@ import type { UserProfile } from '../../models/userProfile';
 import type { Membership } from '../../models/membership';
 import { BADGE_DEFINITIONS } from '../../constants/badges';
 import { useGroupContext } from './GroupProvider';
-import AppCard from '../../components/AppCard';
-
+import Screen from '../../components/Screen';
+import { SPACING, RADIUS } from '../../theme/spacing';
 
 type Props = NativeStackScreenProps<GroupStackParamList, 'UserProfile'>;
 
@@ -49,122 +50,164 @@ const UserProfileScreen = ({ route }: Props) => {
     `${membership?.firstName ?? ''} ${membership?.lastName ?? ''}`.trim();
   const displayName = profile?.displayName?.trim();
   const pronouns = profile?.pronouns?.trim();
-
+  const bio = (profile as any)?.bio?.trim?.() ?? '';
+  const gradeTag = profile?.gradeTag ?? (membership as any)?.gradeTag;
+  const role = membership?.role;
   const totalLends = profile?.totalLends ?? 0;
   const badgesEarned = profile?.badgesEarned ?? {};
-
   const earnedSet = useMemo(() => new Set(Object.keys(badgesEarned).filter((id) => badgesEarned[id])), [badgesEarned]);
 
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: theme.colors.background }]}>
-        <ActivityIndicator />
-      </View>
+      <Screen>
+        <View style={styles.center}>
+          <ActivityIndicator />
+        </View>
+      </Screen>
     );
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: theme.colors.background }} contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        {profile?.photoURL ? (
-          <Image source={{ uri: profile.photoURL }} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text variant="titleMedium">No Photo</Text>
-          </View>
-        )}
-      </View>
-      <Text variant="headlineSmall" style={styles.name}>
-        {fullName || 'Member'}
-      </Text>
-      {displayName ? (
-        <Text variant="bodySmall" style={styles.displayName}>
-          {displayName}
-        </Text>
-      ) : null}
-      {pronouns ? (
-        <Text variant="bodySmall" style={styles.pronouns}>
-          {pronouns}
-        </Text>
-      ) : null}
+    <Screen>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* ─── Header Card ─── */}
+        <View style={[styles.headerCard, { backgroundColor: theme.colors.surface }]}>
+          {profile?.photoURL ? (
+            <Image source={{ uri: profile.photoURL }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatarPlaceholder, { backgroundColor: theme.colors.secondary }]}>
+              <MaterialCommunityIcons name="account" size={36} color={theme.colors.primary} />
+            </View>
+          )}
 
-      <AppCard style={[styles.statsCard, { backgroundColor: theme.colors.surface }]}>
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text variant="headlineSmall">{membership?.lendsCompleted ?? 0}</Text>
-            <Text variant="bodySmall">Lends</Text>
+          <Text style={[styles.fullName, { color: '#1C1C1E' }]}>{fullName || 'Member'}</Text>
+          {displayName && displayName !== fullName ? (
+            <Text style={styles.username}>@{displayName}</Text>
+          ) : null}
+
+          <View style={styles.metaRow}>
+            {pronouns ? (
+              <View style={[styles.metaChip, { backgroundColor: theme.colors.secondary }]}>
+                <Text style={[styles.metaChipText, { color: theme.colors.onSecondary }]}>{pronouns}</Text>
+              </View>
+            ) : null}
+            {gradeTag ? (
+              <View style={[styles.metaChip, { backgroundColor: theme.colors.secondary }]}>
+                <Text style={[styles.metaChipText, { color: theme.colors.onSecondary }]}>{gradeTag}</Text>
+              </View>
+            ) : null}
+            {role === 'admin' ? (
+              <View style={[styles.metaChip, { backgroundColor: `${theme.colors.primary}20` }]}>
+                <MaterialCommunityIcons name="shield-check" size={12} color={theme.colors.primary} />
+                <Text style={[styles.metaChipText, { color: theme.colors.primary }]}>Admin</Text>
+              </View>
+            ) : null}
           </View>
+
+          {bio ? <Text style={[styles.bio, { color: '#3C3C43' }]}>{bio}</Text> : null}
+        </View>
+
+        {/* ─── Stats Row ─── */}
+        <View style={[styles.statsRow, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.statItem}>
-            <Text variant="headlineSmall">{membership?.borrowsCompleted ?? 0}</Text>
-            <Text variant="bodySmall">Borrows</Text>
+            <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{membership?.lendsCompleted ?? 0}</Text>
+            <Text style={styles.statLabel}>Lends</Text>
           </View>
+          <View style={[styles.statDivider, { backgroundColor: theme.colors.outline }]} />
           <View style={styles.statItem}>
-            <Text variant="headlineSmall">{membership?.trustScore ?? '—'}</Text>
-            <Text variant="bodySmall">Trust</Text>
+            <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{membership?.borrowsCompleted ?? 0}</Text>
+            <Text style={styles.statLabel}>Borrows</Text>
+          </View>
+          <View style={[styles.statDivider, { backgroundColor: theme.colors.outline }]} />
+          <View style={styles.statItem}>
+            <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{membership?.trustScore ?? '—'}</Text>
+            <Text style={styles.statLabel}>Trust</Text>
           </View>
         </View>
-      </AppCard>
 
-      <Text variant="titleMedium" style={styles.sectionTitle}>
-        Badges
-      </Text>
-      <View style={styles.grid}>
-        {BADGE_DEFINITIONS.map((badge) => {
-          const unlocked = earnedSet.has(badge.id) || totalLends >= badge.threshold;
-          return (
-            <Card
-              key={badge.id}
-              mode="outlined"
-              style={[
-                styles.badgeCard,
-                {
-                  backgroundColor: unlocked ? `${badge.color}22` : theme.colors.surface,
-                  borderColor: unlocked ? badge.color : theme.colors.outline,
-                },
-              ]}
-            >
-              <Card.Content>
-                <Text variant="titleSmall" style={styles.badgeTitle} numberOfLines={2}>
-                  {badge.title}
-                </Text>
-                <Text variant="bodySmall" style={{ color: unlocked ? '#0f172a' : '#6b7280' }}>
-                  {unlocked ? 'Unlocked' : `${Math.min(totalLends, badge.threshold)} / ${badge.threshold} lends`}
-                </Text>
-              </Card.Content>
-            </Card>
-          );
-        })}
-      </View>
-    </ScrollView>
+        {/* ─── Badges ─── */}
+        <View style={[styles.badgesCard, { backgroundColor: theme.colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: '#1C1C1E' }]}>Badges</Text>
+          <View style={styles.badgeGrid}>
+            {BADGE_DEFINITIONS.map((badge) => {
+              const unlocked = earnedSet.has(badge.id) || totalLends >= badge.threshold;
+              return (
+                <View
+                  key={badge.id}
+                  style={[
+                    styles.badgeItem,
+                    {
+                      backgroundColor: unlocked ? `${badge.color}18` : `${theme.colors.outline}20`,
+                      borderColor: unlocked ? badge.color : theme.colors.outline,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.badgeTitle, { color: unlocked ? '#1C1C1E' : '#8E8E93' }]} numberOfLines={1}>
+                    {badge.title}
+                  </Text>
+                  <Text style={{ fontSize: 11, color: unlocked ? '#34C759' : '#8E8E93' }}>
+                    {unlocked ? 'Unlocked' : `${Math.min(totalLends, badge.threshold)}/${badge.threshold}`}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      </ScrollView>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 8 },
-  header: { alignItems: 'center' },
-  avatar: { width: 120, height: 120, borderRadius: 60 },
-  avatarPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#e5e7eb',
-  },
-  name: { fontWeight: '700', textAlign: 'center' },
-  displayName: { textAlign: 'center', color: '#6b7280' },
-  pronouns: { textAlign: 'center', color: '#6b7280' },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 12 },
-  statsCard: {
-    paddingVertical: 6,
-    marginTop: 12,
-  },
-  statItem: { alignItems: 'center' },
-  sectionTitle: { marginTop: 12, fontWeight: '700' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8 },
-  badgeCard: { width: '47%', borderRadius: 14 },
-  badgeTitle: { fontWeight: '600' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  scroll: { paddingBottom: 40, gap: SPACING.sm },
+
+  headerCard: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.lg,
+    marginHorizontal: SPACING.sm,
+    marginTop: SPACING.sm,
+    gap: 6,
+  },
+  avatar: { width: 90, height: 90, borderRadius: 45, marginBottom: 8 },
+  avatarPlaceholder: {
+    width: 90, height: 90, borderRadius: 45, marginBottom: 8,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  fullName: { fontSize: 22, fontWeight: '700' },
+  username: { fontSize: 14, color: '#8E8E93' },
+  metaRow: {
+    flexDirection: 'row', gap: 6, flexWrap: 'wrap', justifyContent: 'center', marginTop: 4,
+  },
+  metaChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
+  },
+  metaChipText: { fontSize: 12, fontWeight: '500' },
+  bio: { fontSize: 14, lineHeight: 20, textAlign: 'center', marginTop: 8, paddingHorizontal: 12 },
+
+  statsRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around',
+    paddingVertical: 18, borderRadius: RADIUS.lg, marginHorizontal: SPACING.sm,
+  },
+  statItem: { alignItems: 'center', flex: 1 },
+  statNumber: { fontSize: 22, fontWeight: '700' },
+  statLabel: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
+  statDivider: { width: 1, height: 32 },
+
+  badgesCard: {
+    borderRadius: RADIUS.lg, marginHorizontal: SPACING.sm, padding: SPACING.md,
+  },
+  sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 10 },
+  badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  badgeItem: {
+    width: '47%',
+    paddingVertical: 10, paddingHorizontal: 12,
+    borderRadius: RADIUS.md, borderWidth: 1,
+  },
+  badgeTitle: { fontSize: 13, fontWeight: '600' },
 });
 
 export default UserProfileScreen;

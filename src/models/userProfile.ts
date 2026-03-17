@@ -8,6 +8,7 @@ export type UserProfile = {
   displayName?: string;
   pronouns?: string;
   photoURL?: string;
+  bio?: string;
 
   firstName: string;
   lastName: string;
