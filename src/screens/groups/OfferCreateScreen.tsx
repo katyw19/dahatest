@@ -34,10 +34,9 @@ const OfferCreateScreen = ({ route, navigation }: Props) => {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const goToFeed = () => {
-    const nav: any = navigation;
-    const p1 = nav.getParent?.();
-    const p2 = p1?.getParent?.();
-    (p2 ?? p1 ?? nav).navigate('FeedTab');
+    // OfferCreate lives inside the FeedTab stack, so we need to pop
+    // back to the root (GroupFeed) rather than navigate to FeedTab
+    navigation.popToTop();
   };
 
   const {
