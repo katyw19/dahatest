@@ -4,7 +4,12 @@ import { useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SPACING } from '../theme/spacing';
 
-const Screen = ({ children }: PropsWithChildren) => {
+type ScreenProps = PropsWithChildren<{
+  /** Set to true on screens that already have a navigation header handling safe area */
+  noTopPadding?: boolean;
+}>;
+
+const Screen = ({ children, noTopPadding }: ScreenProps) => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   return (
@@ -13,7 +18,7 @@ const Screen = ({ children }: PropsWithChildren) => {
         styles.container,
         {
           backgroundColor: theme.colors.background,
-          paddingTop: Math.max(insets.top + SPACING.sm, SPACING.lg),
+          paddingTop: noTopPadding ? 0 : Math.max(insets.top + SPACING.xs, SPACING.lg),
         },
       ]}
     >
