@@ -101,8 +101,10 @@ const ProfileTabScreen = ({ navigation }: Props) => {
             {profile?.photoURL ? (
               <Image source={{ uri: profile.photoURL }} style={styles.avatar} />
             ) : (
-              <View style={[styles.avatarPlaceholder, { backgroundColor: theme.colors.secondary }]}>
-                <MaterialCommunityIcons name="camera-plus-outline" size={28} color={theme.colors.primary} />
+              <View style={[styles.avatarPlaceholder, { backgroundColor: `${theme.colors.primary}20` }]}>
+                <Text style={[styles.initialsText, { color: theme.colors.primary }]}>
+                  {(fullName.split(' ').map((w: string) => w[0]).join('').slice(0, 2) || '?').toUpperCase()}
+                </Text>
               </View>
             )}
             {uploading ? (
@@ -273,6 +275,10 @@ const styles = StyleSheet.create({
     borderRadius: 45,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  initialsText: {
+    fontSize: 32,
+    fontWeight: '700',
   },
   avatarOverlay: {
     ...StyleSheet.absoluteFillObject,
