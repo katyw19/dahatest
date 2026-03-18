@@ -4,22 +4,15 @@ import {
   Alert,
   FlatList,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
   TextInput as RNTextInput,
   View,
 } from 'react-native';
-import {
-  Button,
-  Card,
-  Dialog,
-  IconButton,
-  Portal,
-  Text,
-  TextInput as PaperTextInput,
-  useTheme,
-} from 'react-native-paper';
+import { IconButton, Text, useTheme } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
 import { useGroupContext } from './GroupProvider';
@@ -50,19 +43,14 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
   const { threadId } = route.params;
   const { currentGroup } = useGroupContext();
   const { user } = useAuth();
-
   const uid = user?.uid ?? '';
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
-
   const [threadOpen, setThreadOpen] = useState(true);
-  const [participants, setParticipants] = useState<{ borrowerUid: string; lenderUid: string } | null>(
-    null
-  );
+  const [participants, setParticipants] = useState<{ borrowerUid: string; lenderUid: string } | null>(null);
   const [needsReviewBy, setNeedsReviewBy] = useState<string[]>([]);
 
   // Review modal state
@@ -71,17 +59,12 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
   const [reviewNote, setReviewNote] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
-
-  // If true, we’re the one who pressed “Finish transaction”.
-  // IMPORTANT: we still do NOT close the thread until after review submit.
   const [finishPending, setFinishPending] = useState(false);
 
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
+    return () => { mountedRef.current = false; };
   }, []);
 
   const isParticipant = useMemo(() => {
@@ -89,17 +72,9 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
     return uid === participants.borrowerUid || uid === participants.lenderUid;
   }, [uid, participants]);
 
-  const isBorrower = useMemo(() => {
-    if (!uid || !participants) return false;
-    return uid === participants.borrowerUid;
-  }, [uid, participants]);
+  const isBorrower = useMemo(() => uid === participants?.borrowerUid, [uid, participants]);
+  const isLender = useMemo(() => uid === participants?.lenderUid, [uid, participants]);
 
-  const isLender = useMemo(() => {
-    if (!uid || !participants) return false;
-    return uid === participants.lenderUid;
-  }, [uid, participants]);
-
-  // ✅ ROLE-BASED COPY
   const reviewCopy = useMemo(() => {
     if (isLender) {
       return {
@@ -131,56 +106,30 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
   }, [currentGroup?.name, navigation]);
 
   useEffect(() => {
-    if (!currentGroup) {
-      setError('No active group.');
-      setLoading(false);
-      return;
-    }
-
+    if (!currentGroup) { setError('No active group.'); setLoading(false); return; }
     const db = getFirebaseDb();
-    if (!db) {
-      setError('Firestore not configured.');
-      setLoading(false);
-      return;
-    }
+    if (!db) { setError('Firestore not configured.'); setLoading(false); return; }
 
     setLoading(true);
     setError(null);
 
     const threadRef = doc(db, `groups/${currentGroup.id}/threads/${threadId}`);
-    const unsubThread = onSnapshot(
-      threadRef,
-      (snap) => {
-        if (!mountedRef.current) return;
-
-        if (!snap.exists()) {
-          setError('Thread not found.');
-          setLoading(false);
-          return;
-        }
-
-        const data: any = snap.data();
-        setParticipants({
-          borrowerUid: data.borrowerUid,
-          lenderUid: data.lenderUid,
-        });
-        setThreadOpen(data.isOpen !== false);
-        setNeedsReviewBy(Array.isArray(data.needsReviewBy) ? data.needsReviewBy : []);
-        setLoading(false);
-      },
-      (err) => {
-        if (!mountedRef.current) return;
-        setError(err.message);
-        setLoading(false);
-      }
-    );
+    const unsubThread = onSnapshot(threadRef, (snap) => {
+      if (!mountedRef.current) return;
+      if (!snap.exists()) { setError('Thread not found.'); setLoading(false); return; }
+      const data: any = snap.data();
+      setParticipants({ borrowerUid: data.borrowerUid, lenderUid: data.lenderUid });
+      setThreadOpen(data.isOpen !== false);
+      setNeedsReviewBy(Array.isArray(data.needsReviewBy) ? data.needsReviewBy : []);
+      setLoading(false);
+    }, (err) => {
+      if (!mountedRef.current) return;
+      setError(err.message);
+      setLoading(false);
+    });
 
     const unsubMessages = listenMessages(currentGroup.id, threadId, setMessages);
-
-    return () => {
-      unsubThread();
-      unsubMessages();
-    };
+    return () => { unsubThread(); unsubMessages(); };
   }, [currentGroup?.id, threadId]);
 
   const handleSend = async () => {
@@ -193,29 +142,16 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
     }
   };
 
-  const resetReviewForm = () => {
-    setReviewError(null);
-    setReviewOutcome('');
-    setReviewNote('');
-  };
+  const resetReviewForm = () => { setReviewError(null); setReviewOutcome(''); setReviewNote(''); };
 
-  // Nav helpers — walk up to the tab navigator
   const goToChatsList = () => {
     const tab = navigation.getParent()?.getParent?.() ?? navigation.getParent();
-    if (tab) {
-      tab.navigate('ChatsTab' as never);
-    } else {
-      navigation.goBack();
-    }
+    if (tab) { tab.navigate('ChatsTab' as never); } else { navigation.goBack(); }
   };
 
   const goToFeed = () => {
     const tab = navigation.getParent()?.getParent?.() ?? navigation.getParent();
-    if (tab) {
-      tab.navigate('FeedTab' as never);
-    } else {
-      navigation.goBack();
-    }
+    if (tab) { tab.navigate('FeedTab' as never); } else { navigation.goBack(); }
   };
 
   useLayoutEffect(() => {
@@ -231,7 +167,7 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
               type: 'thread',
               threadId,
               targetUid,
-              targetName: '', // optional: can be filled later, not needed for Phase 11
+              targetName: '',
               snippet: messages.slice(-1)[0]?.text ?? '',
             })
           }
@@ -240,10 +176,8 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
     });
   }, [navigation, threadId, targetUid, messages, theme.colors.onSurface]);
 
-  // ✅ SAFE finish flow
   const handleFinish = () => {
     if (!currentGroup || !participants || !isParticipant) return;
-
     Alert.alert(
       'Confirm item returned',
       'Only finish once the item is back and the transaction is complete. This will close the chat and start the review.',
@@ -252,34 +186,18 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
         {
           text: 'Yes, item returned',
           style: 'default',
-          onPress: () => {
-            setFinishPending(true);
-            resetReviewForm();
-            setReviewOpen(true);
-          },
+          onPress: () => { setFinishPending(true); resetReviewForm(); setReviewOpen(true); },
         },
       ]
     );
   };
 
-  const handleLeaveReview = () => {
-    setFinishPending(false);
-    resetReviewForm();
-    setReviewOpen(true);
-  };
-
-  const handleReviewCancel = () => {
-    setReviewOpen(false);
-    setFinishPending(false);
-  };
+  const handleLeaveReview = () => { setFinishPending(false); resetReviewForm(); setReviewOpen(true); };
+  const handleReviewCancel = () => { setReviewOpen(false); setFinishPending(false); };
 
   const handleReviewSubmit = async () => {
     if (!currentGroup || !uid || !participants || !targetUid) return;
-
-    if (!reviewOutcome) {
-      setReviewError('Please select an option.');
-      return;
-    }
+    if (!reviewOutcome) { setReviewError('Please select an option.'); return; }
 
     setReviewError(null);
     setReviewSubmitting(true);
@@ -289,73 +207,44 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
       if (!db) throw new Error('Firestore not configured.');
 
       const threadRef = doc(db, `groups/${currentGroup.id}/threads/${threadId}`);
-
-      // 1) Write review doc (per-user)
       const noteText = reviewNote?.trim() || null;
 
       await setDoc(
         doc(db, `groups/${currentGroup.id}/threads/${threadId}/reviews/${uid}`),
         {
-          reviewerUid: uid,
-          targetUid,
-          outcome: reviewOutcome,
-          note: noteText,
+          reviewerUid: uid, targetUid, outcome: reviewOutcome, note: noteText,
           createdAt: serverTimestamp(),
           reviewerRole: isLender ? 'lender' : isBorrower ? 'borrower' : 'unknown',
         },
         { merge: true }
       );
 
-      // 1.25) ✅ Mirror to adminReviewNotes WITH REAL NAMES
-      // Fetch member docs so admin UI can display names instead of UIDs.
       let reviewerName = 'Unknown member';
       let targetName = 'Unknown member';
-
       try {
-        const reviewerSnap = await getDoc(
-          doc(db, `groups/${currentGroup.id}/members/${uid}`)
-        );
-        if (reviewerSnap.exists()) {
-          reviewerName = makeName(reviewerSnap.data()) || 'Unknown member';
-        }
+        const reviewerSnap = await getDoc(doc(db, `groups/${currentGroup.id}/members/${uid}`));
+        if (reviewerSnap.exists()) reviewerName = makeName(reviewerSnap.data()) || 'Unknown member';
       } catch {}
-
       try {
-        const targetSnap = await getDoc(
-          doc(db, `groups/${currentGroup.id}/members/${targetUid}`)
-        );
-        if (targetSnap.exists()) {
-          targetName = makeName(targetSnap.data()) || 'Unknown member';
-        }
+        const targetSnap = await getDoc(doc(db, `groups/${currentGroup.id}/members/${targetUid}`));
+        if (targetSnap.exists()) targetName = makeName(targetSnap.data()) || 'Unknown member';
       } catch {}
 
       const mirrorId = `${threadId}_${uid}`;
       await setDoc(
         doc(db, `groups/${currentGroup.id}/adminReviewNotes/${mirrorId}`),
         {
-          createdAt: serverTimestamp(),
-          groupId: currentGroup.id,
-          threadId,
-          reviewerUid: uid,
-          reviewerName,
-          reviewerRole: isLender ? 'lender' : 'borrower',
-          targetUid,
-          targetName,
-          outcome: reviewOutcome,
-          noteText: noteText, // IMPORTANT: this is what your admin screens read
+          createdAt: serverTimestamp(), groupId: currentGroup.id, threadId,
+          reviewerUid: uid, reviewerName, reviewerRole: isLender ? 'lender' : 'borrower',
+          targetUid, targetName, outcome: reviewOutcome, noteText,
         },
         { merge: true }
       );
 
-      // 1.5) ✅ Update TARGET trust score
       try {
         const reviewerRole = isLender ? 'lender' : 'borrower';
         await applyTrustFromReview(currentGroup.id, targetUid, reviewOutcome as any, reviewerRole, {
-          reviewerUid: uid,
-          threadId,
-          postId: '',
-          acceptedOfferId: '',
-          noteText: reviewNote ?? '',
+          reviewerUid: uid, threadId, postId: '', acceptedOfferId: '', noteText: reviewNote ?? '',
         });
       } catch (trustErr) {
         setReviewError(trustErr instanceof Error ? trustErr.message : 'Failed to update trust.');
@@ -363,23 +252,12 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
         return;
       }
 
-      // 2) Close thread if we are the closer
       if (finishPending) {
-        await finishThread(
-          currentGroup.id,
-          threadId,
-          participants.borrowerUid,
-          participants.lenderUid
-        );
+        await finishThread(currentGroup.id, threadId, participants.borrowerUid, participants.lenderUid);
       }
 
-      // 3) Remove myself from needsReviewBy
-      await updateDoc(threadRef, {
-        needsReviewBy: arrayRemove(uid),
-        lastUpdatedAt: serverTimestamp(),
-      });
+      await updateDoc(threadRef, { needsReviewBy: arrayRemove(uid), lastUpdatedAt: serverTimestamp() });
 
-      // 4) Close modal
       setReviewOpen(false);
       setFinishPending(false);
 
@@ -405,8 +283,10 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
   if (error) {
     return (
       <View style={[styles.center, { backgroundColor: theme.colors.background, padding: 16 }]}>
-        <Text>{error}</Text>
-        <Button onPress={() => navigation.goBack()}>Back</Button>
+        <Text style={{ color: '#1C1C1E' }}>{error}</Text>
+        <Pressable onPress={() => navigation.goBack()} style={{ marginTop: 12 }}>
+          <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>Go Back</Text>
+        </Pressable>
       </View>
     );
   }
@@ -414,8 +294,10 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
   if (!isParticipant) {
     return (
       <View style={[styles.center, { backgroundColor: theme.colors.background, padding: 16 }]}>
-        <Text>Not allowed to view this chat.</Text>
-        <Button onPress={() => navigation.goBack()}>Back</Button>
+        <Text style={{ color: '#1C1C1E' }}>Not allowed to view this chat.</Text>
+        <Pressable onPress={() => navigation.goBack()} style={{ marginTop: 12 }}>
+          <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>Go Back</Text>
+        </Pressable>
       </View>
     );
   }
@@ -426,67 +308,43 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={64}
     >
-      {/* REVIEW MODAL */}
-      <Portal>
-        <Dialog visible={reviewOpen} dismissable={false} style={styles.reviewDialog}>
-          <View style={styles.reviewBody}>
-            <Text style={styles.reviewTitle}>{reviewCopy.title}</Text>
+      {/* ─── Review Modal ─── */}
+      <Modal
+        visible={reviewOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={handleReviewCancel}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={handleReviewCancel}>
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <Text style={styles.modalTitle}>{reviewCopy.title}</Text>
 
-            {reviewError ? <Text style={styles.error}>{reviewError}</Text> : null}
+            {reviewError ? <Text style={styles.errorText}>{reviewError}</Text> : null}
 
-            <Pressable
-              onPress={() => setReviewOutcome('returned_same')}
-              style={[
-                styles.reviewOption,
-                {
-                  backgroundColor: reviewOutcome === 'returned_same' ? theme.colors.primary : 'transparent',
-                  borderColor: reviewOutcome === 'returned_same' ? theme.colors.primary : theme.colors.outlineVariant ?? '#ddd',
-                },
-              ]}
-            >
-              <Text style={[
-                styles.reviewOptionText,
-                { color: reviewOutcome === 'returned_same' ? theme.colors.onPrimary : theme.colors.onSurface },
-              ]}>
-                {reviewCopy.same}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => setReviewOutcome('minor_damage')}
-              style={[
-                styles.reviewOption,
-                {
-                  backgroundColor: reviewOutcome === 'minor_damage' ? theme.colors.primary : 'transparent',
-                  borderColor: reviewOutcome === 'minor_damage' ? theme.colors.primary : theme.colors.outlineVariant ?? '#ddd',
-                },
-              ]}
-            >
-              <Text style={[
-                styles.reviewOptionText,
-                { color: reviewOutcome === 'minor_damage' ? theme.colors.onPrimary : theme.colors.onSurface },
-              ]}>
-                {reviewCopy.minor}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => setReviewOutcome('major_damage')}
-              style={[
-                styles.reviewOption,
-                {
-                  backgroundColor: reviewOutcome === 'major_damage' ? theme.colors.primary : 'transparent',
-                  borderColor: reviewOutcome === 'major_damage' ? theme.colors.primary : theme.colors.outlineVariant ?? '#ddd',
-                },
-              ]}
-            >
-              <Text style={[
-                styles.reviewOptionText,
-                { color: reviewOutcome === 'major_damage' ? theme.colors.onPrimary : theme.colors.onSurface },
-              ]}>
-                {reviewCopy.major}
-              </Text>
-            </Pressable>
+            {(['returned_same', 'minor_damage', 'major_damage'] as const).map((key) => {
+              const labels = { returned_same: reviewCopy.same, minor_damage: reviewCopy.minor, major_damage: reviewCopy.major };
+              const icons = { returned_same: 'check-circle', minor_damage: 'alert-circle', major_damage: 'close-circle' } as const;
+              const colors = { returned_same: '#34C759', minor_damage: '#FF9500', major_damage: '#FF3B30' };
+              const selected = reviewOutcome === key;
+              return (
+                <Pressable
+                  key={key}
+                  onPress={() => setReviewOutcome(key)}
+                  style={[
+                    styles.reviewOption,
+                    {
+                      backgroundColor: selected ? `${colors[key]}15` : 'transparent',
+                      borderColor: selected ? colors[key] : theme.colors.outline,
+                    },
+                  ]}
+                >
+                  <MaterialCommunityIcons name={icons[key]} size={20} color={selected ? colors[key] : '#8E8E93'} />
+                  <Text style={[styles.reviewOptionText, { color: selected ? colors[key] : '#1C1C1E' }]}>
+                    {labels[key]}
+                  </Text>
+                </Pressable>
+              );
+            })}
 
             <RNTextInput
               placeholder="Add a note (optional)"
@@ -494,31 +352,31 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
               multiline
               value={reviewNote}
               onChangeText={setReviewNote}
-              style={[styles.reviewNoteInput, { borderColor: theme.colors.outlineVariant ?? '#ddd', color: theme.colors.onSurface }]}
+              style={[styles.reviewNoteInput, { borderColor: theme.colors.outline, color: '#1C1C1E' }]}
             />
 
             <View style={styles.reviewActionRow}>
-              <Pressable onPress={handleReviewCancel} disabled={reviewSubmitting} style={styles.reviewCancelBtn}>
-                <Text style={[styles.reviewCancelText, { color: theme.colors.outline }]}>Cancel</Text>
+              <Pressable onPress={handleReviewCancel} disabled={reviewSubmitting} style={styles.cancelBtn}>
+                <Text style={{ fontSize: 15, fontWeight: '500', color: '#8E8E93' }}>Cancel</Text>
               </Pressable>
               <Pressable
                 onPress={handleReviewSubmit}
                 disabled={!reviewOutcome || reviewSubmitting}
                 style={[
-                  styles.reviewSubmitBtn,
-                  { backgroundColor: !reviewOutcome || reviewSubmitting ? '#ccc' : theme.colors.primary },
+                  styles.submitBtn,
+                  { backgroundColor: !reviewOutcome || reviewSubmitting ? '#C7C7CC' : theme.colors.primary },
                 ]}
               >
-                <Text style={[styles.reviewSubmitText, { color: theme.colors.onPrimary }]}>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>
                   {reviewSubmitting ? 'Submitting...' : 'Submit'}
                 </Text>
               </Pressable>
             </View>
-          </View>
-        </Dialog>
-      </Portal>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
-      {/* MESSAGES */}
+      {/* ─── Messages ─── */}
       <FlatList
         data={messages}
         keyExtractor={(item) => item.id}
@@ -526,88 +384,109 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
         renderItem={({ item }) => {
           const mine = item.senderUid === uid;
           return (
-            <View style={[styles.row, mine ? styles.rowEnd : styles.rowStart]}>
-              <Card
+            <View style={[styles.msgRow, mine ? styles.msgRowEnd : styles.msgRowStart]}>
+              <View
                 style={[
                   styles.bubble,
-                  { backgroundColor: mine ? theme.colors.primary : theme.colors.surface },
+                  mine
+                    ? [styles.bubbleMine, { backgroundColor: theme.colors.primary }]
+                    : [styles.bubbleOther, { backgroundColor: theme.colors.surface }],
                 ]}
               >
-                <Card.Content style={styles.bubbleContent}>
-                  <Text style={{ color: mine ? theme.colors.onPrimary : theme.colors.onSurface }}>
-                    {item.text}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.timestamp,
-                      { color: mine ? theme.colors.onPrimary : theme.colors.onSurface },
-                    ]}
-                  >
-                    {item.createdAt && (item.createdAt as any).toDate
-                      ? new Date((item.createdAt as any).toDate()).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })
-                      : ''}
-                  </Text>
-                </Card.Content>
-              </Card>
+                <Text style={{ fontSize: 15, lineHeight: 21, color: mine ? '#fff' : '#1C1C1E' }}>
+                  {item.text}
+                </Text>
+                <Text
+                  style={[
+                    styles.timestamp,
+                    { color: mine ? 'rgba(255,255,255,0.65)' : '#8E8E93' },
+                  ]}
+                >
+                  {item.createdAt && (item.createdAt as any).toDate
+                    ? new Date((item.createdAt as any).toDate()).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : ''}
+                </Text>
+              </View>
             </View>
           );
         }}
       />
 
-      {/* CLOSED STATE + REVIEW PROMPT */}
+      {/* ─── Closed State ─── */}
       {!threadOpen ? (
-        <View style={[styles.closedBanner, { backgroundColor: theme.colors.secondary }]}>
+        <View style={[styles.closedBanner, { backgroundColor: theme.colors.surface }]}>
           {shouldPromptReview ? (
             <>
-              <Text style={{ marginBottom: 6 }}>This chat is closed — please leave a review.</Text>
-              <Button mode="contained" onPress={handleLeaveReview}>
-                Leave review
-              </Button>
+              <MaterialCommunityIcons name="star-outline" size={20} color={theme.colors.primary} />
+              <Text style={{ flex: 1, color: '#1C1C1E', fontSize: 14 }}>
+                This chat is closed — please leave a review.
+              </Text>
+              <Pressable
+                onPress={handleLeaveReview}
+                style={[styles.reviewNowBtn, { backgroundColor: theme.colors.primary }]}
+              >
+                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>Review</Text>
+              </Pressable>
             </>
           ) : (
-            <Text>This chat is closed.</Text>
+            <>
+              <MaterialCommunityIcons name="check-circle-outline" size={20} color="#34C759" />
+              <Text style={{ flex: 1, color: '#8E8E93', fontSize: 14 }}>This chat is closed.</Text>
+            </>
           )}
         </View>
       ) : null}
 
-      {/* INPUT */}
-      <View style={styles.footer}>
-        <RNTextInput
-          style={[
-            styles.input,
-            { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline },
-          ]}
-          value={text}
-          onChangeText={setText}
-          placeholder="Type a message"
-          editable={threadOpen && !reviewOpen}
-        />
-        <Button
-          mode="contained"
-          onPress={handleSend}
-          disabled={!text.trim() || !threadOpen || reviewOpen}
-        >
-          Send
-        </Button>
-      </View>
-
-      {/* FINISH */}
+      {/* ─── Input ─── */}
       {threadOpen ? (
-        <View style={{ paddingHorizontal: 12, paddingTop: 4 }}>
-          <Text variant="bodySmall" style={styles.helperText}>
-            Only tap this after the item has been returned and everything is done.
-          </Text>
-          <Button
-            mode="contained-tonal"
-            onPress={handleFinish}
-            style={styles.finishBtn}
-            disabled={reviewOpen}
+        <View style={[styles.footer, { borderTopColor: theme.colors.outline }]}>
+          <View style={[styles.inputWrap, { backgroundColor: theme.colors.surface }]}>
+            <RNTextInput
+              style={styles.input}
+              value={text}
+              onChangeText={setText}
+              placeholder="Type a message..."
+              placeholderTextColor="#8E8E93"
+              editable={!reviewOpen}
+              multiline
+            />
+          </View>
+          <Pressable
+            onPress={handleSend}
+            disabled={!text.trim() || reviewOpen}
+            style={({ pressed }) => [
+              styles.sendBtn,
+              {
+                backgroundColor: !text.trim() ? '#C7C7CC' : theme.colors.primary,
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
           >
-            Item returned — finish
-          </Button>
+            <MaterialCommunityIcons name="send" size={18} color="#fff" />
+          </Pressable>
+        </View>
+      ) : null}
+
+      {/* ─── Finish ─── */}
+      {threadOpen ? (
+        <View style={styles.finishSection}>
+          <Pressable
+            onPress={handleFinish}
+            disabled={reviewOpen}
+            style={({ pressed }) => [
+              styles.finishBtn,
+              { backgroundColor: theme.colors.surface, opacity: pressed ? 0.85 : 1 },
+            ]}
+          >
+            <MaterialCommunityIcons name="check-all" size={18} color={theme.colors.primary} />
+            <Text style={[styles.finishBtnText, { color: theme.colors.primary }]}>
+              Item returned — finish
+            </Text>
+          </Pressable>
+          <Text style={styles.finishHint}>Only tap after the item has been returned</Text>
         </View>
       ) : null}
     </KeyboardAvoidingView>
@@ -616,60 +495,131 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list: { padding: SPACING.lg, gap: SPACING.sm },
-  row: { flexDirection: 'row' },
-  rowEnd: { justifyContent: 'flex-end' },
-  rowStart: { justifyContent: 'flex-start' },
-  bubble: { maxWidth: '80%', borderRadius: RADIUS.md },
-  bubbleContent: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+
+  /* Messages */
+  list: { padding: SPACING.md, gap: 6 },
+  msgRow: { flexDirection: 'row' },
+  msgRowEnd: { justifyContent: 'flex-end' },
+  msgRowStart: { justifyContent: 'flex-start' },
+  bubble: {
+    maxWidth: '78%',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
-  timestamp: { fontSize: 10, marginTop: 4, opacity: 0.7 },
+  bubbleMine: {
+    borderRadius: 20,
+    borderBottomRightRadius: 6,
+  },
+  bubbleOther: {
+    borderRadius: 20,
+    borderBottomLeftRadius: 6,
+  },
+  timestamp: { fontSize: 10, marginTop: 4, alignSelf: 'flex-end' },
+
+  /* Footer */
   footer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    gap: SPACING.sm,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: RADIUS.md,
+    alignItems: 'flex-end',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
+    gap: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  finishBtn: { marginHorizontal: SPACING.lg, marginBottom: SPACING.lg },
-  helperText: { color: '#6b7280' },
+  inputWrap: {
+    flex: 1,
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 6,
+    maxHeight: 120,
+  },
+  input: {
+    fontSize: 15,
+    color: '#1C1C1E',
+    maxHeight: 100,
+  },
+  sendBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Platform.OS === 'ios' ? 2 : 0,
+  },
+
+  /* Closed */
   closedBanner: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 12,
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.sm,
     borderRadius: RADIUS.md,
-    margin: SPACING.lg,
   },
-  optionBtn: { marginTop: SPACING.sm },
-  reviewDialog: {
-    marginHorizontal: 24,
-    borderRadius: 20,
-    overflow: 'hidden',
-    padding: 0,
+  reviewNowBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
   },
-  reviewBody: {
+
+  /* Finish */
+  finishSection: {
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.lg,
+    gap: 4,
+  },
+  finishBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: RADIUS.md,
+    width: '100%',
+  },
+  finishBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  finishHint: {
+    fontSize: 11,
+    color: '#8E8E93',
+  },
+
+  /* Review Modal */
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 24,
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 360,
     gap: 12,
   },
-  reviewTitle: {
-    fontSize: 20,
+  modalTitle: {
+    fontSize: 18,
     fontWeight: '700',
+    color: '#1C1C1E',
     textAlign: 'center',
     marginBottom: 4,
   },
   reviewOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     borderWidth: 1.5,
     borderRadius: 14,
     paddingVertical: 14,
-    alignItems: 'center',
+    paddingHorizontal: 16,
   },
   reviewOptionText: {
     fontSize: 15,
@@ -690,34 +640,23 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 4,
   },
-  reviewCancelBtn: {
+  cancelBtn: {
     paddingVertical: 10,
     paddingHorizontal: 16,
   },
-  reviewCancelText: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  reviewSubmitBtn: {
+  submitBtn: {
     paddingVertical: 10,
     paddingHorizontal: 24,
     borderRadius: 20,
   },
-  reviewSubmitText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  error: { color: '#b91c1c', marginBottom: 4, textAlign: 'center', fontSize: 13 },
+  errorText: { color: '#FF3B30', fontSize: 13, textAlign: 'center' },
+
   headerIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
   },
   headerIconContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
 });
 
