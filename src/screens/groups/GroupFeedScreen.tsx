@@ -380,7 +380,7 @@ const GroupFeedScreen = () => {
   };
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       {error ? (
         <Text style={[styles.error, { padding: 12 }]} variant="bodySmall">
           {error}
