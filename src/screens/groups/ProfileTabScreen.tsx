@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.lg,
     marginHorizontal: SPACING.sm,
-    marginTop: 10,
+    marginTop: 16,
     gap: 6,
   },
   avatarWrap: {
