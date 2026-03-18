@@ -30,6 +30,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { applyTrustFromReview } from '../../services/trust';
+import { markThreadRead } from '../../services/unread';
 import { RADIUS, SPACING } from '../../theme/spacing';
 
 type Props = NativeStackScreenProps<GroupStackParamList, 'ChatThread'>;
@@ -131,6 +132,13 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
     const unsubMessages = listenMessages(currentGroup.id, threadId, setMessages);
     return () => { unsubThread(); unsubMessages(); };
   }, [currentGroup?.id, threadId]);
+
+  // Mark thread as read whenever messages update or screen is focused
+  useEffect(() => {
+    if (uid && threadId && messages.length > 0) {
+      markThreadRead(uid, threadId).catch(() => {});
+    }
+  }, [uid, threadId, messages.length]);
 
   const handleSend = async () => {
     if (!text.trim() || !currentGroup || !uid) return;
