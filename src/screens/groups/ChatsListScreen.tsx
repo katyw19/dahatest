@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
-import { Button, Text, useTheme } from 'react-native-paper';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Text, useTheme } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
 import { useGroupContext } from './GroupProvider';
@@ -10,7 +11,7 @@ import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestor
 import { listenUserProfiles } from '../../services/userProfiles';
 import type { Membership } from '../../models/membership';
 import { resolveDisplayName } from '../../utils/displayName';
-import AppCard from '../../components/AppCard';
+import Screen from '../../components/Screen';
 import { SPACING, RADIUS } from '../../theme/spacing';
 
 type Props = NativeStackScreenProps<GroupStackParamList, 'ChatsList'>;
@@ -39,13 +40,10 @@ const ChatsListScreen = ({ navigation }: Props) => {
 
   useEffect(() => {
     if (!currentGroup || !uid) return;
-
     const db = getFirebaseDb();
     if (!db) return;
 
     const threadsCol = collection(db, `groups/${currentGroup.id}/threads`);
-
-    // Active threads: we do 2 listeners (borrower OR lender), merge client-side.
     const qBorrower = query(threadsCol, where('isOpen', '==', true), where('borrowerUid', '==', uid));
     const qLender = query(threadsCol, where('isOpen', '==', true), where('lenderUid', '==', uid));
 
@@ -54,8 +52,6 @@ const ChatsListScreen = ({ navigation }: Props) => {
       setActive((prev) => {
         const map = new Map(prev.map((t) => [t.id, t]));
         rows.forEach((t) => map.set(t.id, t));
-        // remove any that are no longer open borrower threads
-        // (we’ll re-merge with lender snapshot below)
         return Array.from(map.values());
       });
     });
@@ -65,7 +61,6 @@ const ChatsListScreen = ({ navigation }: Props) => {
       setActive((prev) => {
         const map = new Map(prev.map((t) => [t.id, t]));
         rows.forEach((t) => map.set(t.id, t));
-        // keep only open threads where uid is borrower or lender
         const filtered = Array.from(map.values()).filter(
           (t) => t.isOpen === true && (t.borrowerUid === uid || t.lenderUid === uid)
         );
@@ -73,7 +68,6 @@ const ChatsListScreen = ({ navigation }: Props) => {
       });
     });
 
-    // Pending reviews: closed threads where needsReviewBy contains uid
     const qPending = query(
       threadsCol,
       where('isOpen', '==', false),
@@ -133,9 +127,7 @@ const ChatsListScreen = ({ navigation }: Props) => {
 
   const goThread = (threadId: string) => navigation.navigate('ChatThread', { threadId });
 
-  const pendingEmpty = !pending.length;
-  const activeEmpty = !active.length;
-  const displayName = (item: ThreadRow) => {
+  const getName = (item: ThreadRow) => {
     const otherUid = uid === item.borrowerUid ? item.lenderUid : item.borrowerUid;
     return resolveDisplayName({
       displayName: memberMap[otherUid]?.displayName || profileMap[otherUid]?.displayName,
@@ -145,7 +137,7 @@ const ChatsListScreen = ({ navigation }: Props) => {
     });
   };
 
-  const initialsFor = (item: ThreadRow) => {
+  const getInitials = (item: ThreadRow) => {
     const otherUid = uid === item.borrowerUid ? item.lenderUid : item.borrowerUid;
     const first = memberMap[otherUid]?.firstName || profileMap[otherUid]?.firstName || '';
     const last = memberMap[otherUid]?.lastName || profileMap[otherUid]?.lastName || '';
@@ -153,92 +145,196 @@ const ChatsListScreen = ({ navigation }: Props) => {
     return initials || otherUid.slice(0, 2).toUpperCase();
   };
 
+  const renderRow = (item: ThreadRow, isPending: boolean) => (
+    <Pressable
+      key={item.id}
+      onPress={() => goThread(item.id)}
+      style={({ pressed }) => [
+        styles.chatRow,
+        { backgroundColor: pressed ? `${theme.colors.primary}08` : theme.colors.surface },
+      ]}
+    >
+      <View style={[styles.avatar, { backgroundColor: isPending ? '#FF950020' : `${theme.colors.primary}18` }]}>
+        <Text style={[styles.avatarText, { color: isPending ? '#FF9500' : theme.colors.primary }]}>
+          {getInitials(item)}
+        </Text>
+      </View>
+
+      <View style={styles.chatInfo}>
+        <Text style={[styles.chatName, { color: '#1C1C1E' }]}>{getName(item)}</Text>
+        <Text style={styles.chatSub}>
+          {isPending ? 'Needs your review' : 'Tap to open chat'}
+        </Text>
+      </View>
+
+      {isPending ? (
+        <View style={[styles.badge, { backgroundColor: '#FF950020' }]}>
+          <Text style={{ fontSize: 11, fontWeight: '600', color: '#FF9500' }}>Review</Text>
+        </View>
+      ) : null}
+
+      <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
+    </Pressable>
+  );
+
+  const pendingEmpty = !pending.length;
+  const activeEmpty = !active.length;
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text variant="headlineSmall" style={styles.title}>
-        Chats
-      </Text>
-
-      <Text variant="titleMedium" style={styles.section}>
-        Pending Reviews
-      </Text>
-      {pendingEmpty ? (
-        <Text style={styles.muted}>No pending reviews.</Text>
-      ) : (
-        <FlatList
-          data={pending}
-          keyExtractor={(t) => t.id}
-          renderItem={({ item }) => (
-            <AppCard
-              style={[styles.card, { backgroundColor: theme.colors.surface }]}
-              onPress={() => goThread(item.id)}
-            >
-              <View style={styles.row}>
-                <View style={[styles.avatar, { backgroundColor: theme.colors.secondary }]}>
-                  <Text style={styles.avatarText}>{initialsFor(item)}</Text>
+    <Screen>
+      <FlatList
+        data={[]}
+        renderItem={null}
+        ListHeaderComponent={
+          <>
+            {/* Pending Reviews */}
+            {!pendingEmpty ? (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionDot, { backgroundColor: '#FF9500' }]} />
+                  <Text style={[styles.sectionTitle, { color: '#1C1C1E' }]}>Pending Reviews</Text>
+                  <View style={[styles.countBadge, { backgroundColor: '#FF950020' }]}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#FF9500' }}>{pending.length}</Text>
+                  </View>
                 </View>
-                <View style={styles.rowText}>
-                  <Text style={styles.bold}>{displayName(item)}</Text>
-                  <Text style={styles.muted}>Review needed — tap to open.</Text>
+                <View style={[styles.listCard, { backgroundColor: theme.colors.surface }]}>
+                  {pending.map((item, i) => (
+                    <View key={item.id}>
+                      {i > 0 ? <View style={[styles.rowDivider, { backgroundColor: theme.colors.outline }]} /> : null}
+                      {renderRow(item, true)}
+                    </View>
+                  ))}
                 </View>
               </View>
-            </AppCard>
-          )}
-        />
-      )}
+            ) : null}
 
-      <Text variant="titleMedium" style={styles.section}>
-        Active Chats
-      </Text>
-      {activeEmpty ? (
-        <Text style={styles.muted}>No active chats currently.</Text>
-      ) : (
-        <FlatList
-          data={active}
-          keyExtractor={(t) => t.id}
-          renderItem={({ item }) => (
-            <AppCard
-              style={[styles.card, { backgroundColor: theme.colors.surface }]}
-              onPress={() => goThread(item.id)}
-            >
-              <View style={styles.row}>
-                <View style={[styles.avatar, { backgroundColor: theme.colors.secondary }]}>
-                  <Text style={styles.avatarText}>{initialsFor(item)}</Text>
-                </View>
-                <View style={styles.rowText}>
-                  <Text style={styles.bold}>{displayName(item)}</Text>
-                  <Text style={styles.muted}>Tap to open chat.</Text>
-                </View>
+            {/* Active Chats */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={[styles.sectionDot, { backgroundColor: '#34C759' }]} />
+                <Text style={[styles.sectionTitle, { color: '#1C1C1E' }]}>Active Chats</Text>
+                {!activeEmpty ? (
+                  <View style={[styles.countBadge, { backgroundColor: '#34C75920' }]}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#34C759' }}>{active.length}</Text>
+                  </View>
+                ) : null}
               </View>
-            </AppCard>
-          )}
-        />
-      )}
-
-      <Button mode="text" onPress={() => navigation.goBack()} style={{ marginTop: 8 }}>
-        Back
-      </Button>
-    </View>
+              {activeEmpty ? (
+                <View style={[styles.emptyCard, { backgroundColor: theme.colors.surface }]}>
+                  <MaterialCommunityIcons name="chat-outline" size={32} color="#C7C7CC" />
+                  <Text style={styles.emptyText}>No active chats</Text>
+                  <Text style={styles.emptyHint}>Start a conversation by accepting a borrow request</Text>
+                </View>
+              ) : (
+                <View style={[styles.listCard, { backgroundColor: theme.colors.surface }]}>
+                  {active.map((item, i) => (
+                    <View key={item.id}>
+                      {i > 0 ? <View style={[styles.rowDivider, { backgroundColor: theme.colors.outline }]} /> : null}
+                      {renderRow(item, false)}
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </>
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+      />
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: SPACING.lg, gap: SPACING.sm },
-  title: { fontWeight: '700' },
-  section: { marginTop: SPACING.sm, fontWeight: '700' },
-  card: { marginTop: SPACING.sm },
-  bold: { fontWeight: '700' },
-  muted: { color: '#6b7280', marginTop: 2 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  rowText: { flex: 1 },
-  avatar: {
-    width: 44,
-    height: 44,
+  scroll: { paddingBottom: 40 },
+
+  section: { gap: 8, marginBottom: SPACING.md },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 4,
+  },
+  sectionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    flex: 1,
+  },
+  countBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+
+  listCard: {
     borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+  },
+  chatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: SPACING.md,
+    gap: 12,
+  },
+  rowDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 68,
+  },
+
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: '#1f2937', fontWeight: '700' },
+  avatarText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  chatInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  chatName: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  chatSub: {
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+
+  emptyCard: {
+    borderRadius: RADIUS.lg,
+    alignItems: 'center',
+    paddingVertical: 32,
+    gap: 8,
+  },
+  emptyText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  emptyHint: {
+    fontSize: 13,
+    color: '#C7C7CC',
+    textAlign: 'center',
+    paddingHorizontal: 24,
+  },
 });
 
 export default ChatsListScreen;
