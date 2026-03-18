@@ -132,6 +132,9 @@ export const sendMessage = async (
     text: payload.text,
     createdAt: serverTimestamp(),
   });
+  // Update thread's lastMessageAt so chat list can detect new messages
+  const threadRef = doc(db, `groups/${groupId}/threads/${threadId}`);
+  await updateDoc(threadRef, { lastMessageAt: serverTimestamp() });
 };
 
 export const closeThread = async (groupId: string, threadId: string) => {
