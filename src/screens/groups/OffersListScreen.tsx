@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Text, useTheme } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
 import { useGroupContext } from './GroupProvider';
@@ -13,10 +14,19 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import type { Membership } from '../../models/membership';
 import { resolveDisplayName } from '../../utils/displayName';
 import { getFirebaseDb } from '../../services/firebase';
-import AppCard from '../../components/AppCard';
+import Screen from '../../components/Screen';
 import { SPACING, RADIUS } from '../../theme/spacing';
 
 type Props = NativeStackScreenProps<GroupStackParamList, 'OffersList'>;
+
+const conditionLabel = (c?: string) => {
+  switch (c) {
+    case 'new': return 'New';
+    case 'good': return 'Good';
+    case 'used': return 'Used';
+    default: return c ?? '';
+  }
+};
 
 const OffersListScreen = ({ route, navigation }: Props) => {
   const theme = useTheme();
@@ -60,6 +70,7 @@ const OffersListScreen = ({ route, navigation }: Props) => {
       if (unsub) unsub();
     };
   }, [lenderUids]);
+
   const [threadId, setThreadId] = useState<string | null>(null);
   const isAuthor = user?.uid === route.params.postAuthorUid;
 
@@ -98,9 +109,11 @@ const OffersListScreen = ({ route, navigation }: Props) => {
 
   if (!isAuthor) {
     return (
-      <View style={[styles.center, { backgroundColor: theme.colors.background }]}>
-        <Text>Authors only</Text>
-      </View>
+      <Screen>
+        <View style={styles.center}>
+          <Text style={{ color: '#8E8E93' }}>Authors only</Text>
+        </View>
+      </Screen>
     );
   }
 
@@ -148,130 +161,296 @@ const OffersListScreen = ({ route, navigation }: Props) => {
     );
   }
 
+  const getName = (uid: string) =>
+    resolveDisplayName({
+      displayName: memberMap[uid]?.displayName || profileMap[uid]?.displayName,
+      firstName: memberMap[uid]?.firstName || profileMap[uid]?.firstName,
+      lastName: memberMap[uid]?.lastName || profileMap[uid]?.lastName,
+      fallbackUid: uid,
+    });
+
+  const getInitials = (uid: string) => {
+    const first = memberMap[uid]?.firstName || profileMap[uid]?.firstName || '';
+    const last = memberMap[uid]?.lastName || profileMap[uid]?.lastName || '';
+    const initials = `${first.slice(0, 1)}${last.slice(0, 1)}`.trim();
+    return initials || uid.slice(0, 2).toUpperCase();
+  };
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={styles.container}
+      contentContainerStyle={styles.scroll}
+      showsVerticalScrollIndicator={false}
     >
-      <Text variant="headlineSmall" style={styles.title}>
-        Offers
+      {/* Header */}
+      <Text style={[styles.offerCount, { color: '#8E8E93' }]}>
+        {offers.length} {offers.length === 1 ? 'offer' : 'offers'}
       </Text>
-      {error ? (
-        <Text style={styles.error} variant="bodySmall">
-          {error}
-        </Text>
-      ) : null}
+
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
       {offers.length === 0 ? (
-        <Text>No offers yet.</Text>
+        <View style={[styles.emptyCard, { backgroundColor: theme.colors.surface }]}>
+          <MaterialCommunityIcons name="hand-extended-outline" size={36} color="#C7C7CC" />
+          <Text style={styles.emptyTitle}>No offers yet</Text>
+          <Text style={styles.emptyHint}>When someone offers to lend, it will appear here</Text>
+        </View>
       ) : (
-        offers.map((offer) => (
-          <AppCard key={offer.id} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-            <Pressable
-              onPress={() => navigation.navigate('UserProfile', { uid: offer.lenderUid })}
-              style={({ pressed }) => [
-                styles.namePill,
-                { backgroundColor: theme.colors.secondary, borderColor: theme.colors.outline },
-                pressed ? styles.namePillPressed : null,
-              ]}
-            >
-              <Text variant="titleMedium" style={[styles.nameText, { color: theme.colors.onSecondary }]}>
-                {resolveDisplayName({
-                  displayName:
-                    memberMap[offer.lenderUid]?.displayName ||
-                    profileMap[offer.lenderUid]?.displayName,
-                  firstName:
-                    memberMap[offer.lenderUid]?.firstName ||
-                    profileMap[offer.lenderUid]?.firstName,
-                  lastName:
-                    memberMap[offer.lenderUid]?.lastName ||
-                    profileMap[offer.lenderUid]?.lastName,
-                  fallbackUid: offer.lenderUid,
-                })}
-              </Text>
-            </Pressable>
-            <Text style={styles.subtle}>
-              {offer.lenderGradeTag ?? ''} • Trust: {offer.lenderTrustScore ?? 'N/A'}
-            </Text>
-            <Text style={styles.sectionText}>{offer.itemDescription}</Text>
-            <Text style={styles.subtle}>Condition: {offer.condition}</Text>
-            {offer.notes ? <Text style={styles.subtle}>Notes: {offer.notes}</Text> : null}
-            <Text style={styles.subtle}>Status: {offer.status}</Text>
-            {offer.photoUrl ? <Image source={{ uri: offer.photoUrl }} style={styles.image} /> : null}
-            <View style={styles.actions}>
-              <Button
-                mode="contained"
-                onPress={() => handleAccept(offer)}
-                loading={actingId === offer.id}
-                disabled={actingId === offer.id || offer.status !== 'pending'}
-              >
-                Accept Offer
-              </Button>
-              {offer.status === 'accepted' ? (
-                <Button mode="contained" onPress={handleOpenChat}>
-                  Message
-                </Button>
-              ) : (
-                <Button mode="outlined" disabled>
-                  Accept to start chat
-                </Button>
-              )}
-            </View>
-          </AppCard>
-        ))
+        <View style={styles.offersList}>
+          {offers.map((offer) => {
+            const isPending = offer.status === 'pending';
+            const isAccepted = offer.status === 'accepted';
+
+            return (
+              <View key={offer.id} style={[styles.offerCard, { backgroundColor: theme.colors.surface }]}>
+                {/* Person row */}
+                <Pressable
+                  onPress={() => navigation.navigate('UserProfile', { uid: offer.lenderUid })}
+                  style={({ pressed }) => [styles.personRow, pressed && { opacity: 0.7 }]}
+                >
+                  <View style={[styles.avatar, { backgroundColor: `${theme.colors.primary}15` }]}>
+                    <Text style={[styles.avatarText, { color: theme.colors.primary }]}>
+                      {getInitials(offer.lenderUid)}
+                    </Text>
+                  </View>
+                  <View style={styles.personInfo}>
+                    <Text style={[styles.personName, { color: '#1C1C1E' }]}>{getName(offer.lenderUid)}</Text>
+                    <View style={styles.personMeta}>
+                      {offer.lenderGradeTag ? (
+                        <Text style={styles.metaText}>{offer.lenderGradeTag}</Text>
+                      ) : null}
+                      {offer.lenderGradeTag && offer.lenderTrustScore != null ? (
+                        <Text style={styles.metaDot}>·</Text>
+                      ) : null}
+                      {offer.lenderTrustScore != null ? (
+                        <Text style={styles.metaText}>Trust {offer.lenderTrustScore}</Text>
+                      ) : null}
+                    </View>
+                  </View>
+                  <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
+                </Pressable>
+
+                <View style={[styles.cardDivider, { backgroundColor: theme.colors.outline }]} />
+
+                {/* Item details */}
+                <View style={styles.detailsSection}>
+                  <Text style={[styles.itemDesc, { color: '#1C1C1E' }]}>{offer.itemDescription}</Text>
+
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Condition</Text>
+                    <Text style={[styles.detailValue, { color: '#1C1C1E' }]}>{conditionLabel(offer.condition)}</Text>
+                  </View>
+
+                  {offer.notes ? (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Notes</Text>
+                      <Text style={[styles.detailValue, { color: '#1C1C1E' }]} numberOfLines={3}>{offer.notes}</Text>
+                    </View>
+                  ) : null}
+
+                  {offer.photoUrl ? (
+                    <Image source={{ uri: offer.photoUrl }} style={styles.offerImage} />
+                  ) : null}
+                </View>
+
+                {/* Actions */}
+                <View style={styles.actionsRow}>
+                  {isPending ? (
+                    <Pressable
+                      onPress={() => handleAccept(offer)}
+                      disabled={actingId === offer.id}
+                      style={({ pressed }) => [
+                        styles.acceptBtn,
+                        { backgroundColor: theme.colors.primary, opacity: pressed || actingId === offer.id ? 0.7 : 1 },
+                      ]}
+                    >
+                      {actingId === offer.id ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <>
+                          <MaterialCommunityIcons name="check" size={16} color="#fff" />
+                          <Text style={styles.acceptBtnText}>Accept Offer</Text>
+                        </>
+                      )}
+                    </Pressable>
+                  ) : isAccepted ? (
+                    <Pressable
+                      onPress={handleOpenChat}
+                      style={({ pressed }) => [
+                        styles.acceptBtn,
+                        { backgroundColor: theme.colors.primary, opacity: pressed ? 0.85 : 1 },
+                      ]}
+                    >
+                      <MaterialCommunityIcons name="message-text-outline" size={16} color="#fff" />
+                      <Text style={styles.acceptBtnText}>Message</Text>
+                    </Pressable>
+                  ) : null}
+
+                  {/* Status indicator */}
+                  <Text style={[styles.statusLabel, { color: isAccepted ? '#34C759' : '#8E8E93' }]}>
+                    {isAccepted ? 'Accepted' : isPending ? 'Pending' : offer.status}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
       )}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: SPACING.lg,
-    gap: SPACING.md,
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  scroll: {
+    padding: SPACING.md,
+    paddingBottom: 40,
+    gap: SPACING.sm,
   },
-  center: {
-    flex: 1,
+
+  offerCount: {
+    fontSize: 13,
+    fontWeight: '500',
+    paddingHorizontal: 4,
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+
+  /* Empty */
+  emptyCard: {
+    borderRadius: RADIUS.lg,
+    alignItems: 'center',
+    paddingVertical: 40,
+    gap: 8,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  emptyHint: {
+    fontSize: 13,
+    color: '#C7C7CC',
+    textAlign: 'center',
+    paddingHorizontal: 24,
+  },
+
+  /* Offers list */
+  offersList: {
+    gap: SPACING.sm,
+  },
+  offerCard: {
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+  },
+
+  /* Person row */
+  personRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SPACING.md,
+    gap: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
+  avatarText: {
+    fontSize: 15,
     fontWeight: '700',
   },
-  card: {
-    borderRadius: RADIUS.lg,
+  personInfo: {
+    flex: 1,
+    gap: 2,
   },
-  namePill: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-  },
-  namePillPressed: {
-    opacity: 0.8,
-  },
-  nameText: {
+  personName: {
+    fontSize: 15,
     fontWeight: '600',
   },
-  subtle: {
-    color: '#6b7280',
-    marginTop: SPACING.xs,
-  },
-  sectionText: {
-    marginTop: SPACING.sm,
-  },
-  actions: {
-    marginTop: SPACING.sm,
+  personMeta: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
+    alignItems: 'center',
+    gap: 4,
   },
-  image: {
+  metaText: {
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  metaDot: {
+    fontSize: 13,
+    color: '#C7C7CC',
+  },
+
+  cardDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: SPACING.md,
+  },
+
+  /* Details */
+  detailsSection: {
+    padding: SPACING.md,
+    gap: 10,
+  },
+  itemDesc: {
+    fontSize: 15,
+    fontWeight: '500',
+    lineHeight: 21,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  detailLabel: {
+    fontSize: 13,
+    color: '#8E8E93',
+    fontWeight: '500',
+    minWidth: 80,
+  },
+  detailValue: {
+    fontSize: 13,
+    fontWeight: '500',
+    flex: 1,
+    textAlign: 'right',
+  },
+  offerImage: {
     width: '100%',
     height: 180,
     borderRadius: RADIUS.md,
-    marginTop: SPACING.sm,
   },
-  error: {
-    color: '#b91c1c',
+
+  /* Actions */
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.md,
+    gap: 12,
+  },
+  acceptBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: RADIUS.md,
+  },
+  acceptBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  statusLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginLeft: 'auto',
   },
 });
 
