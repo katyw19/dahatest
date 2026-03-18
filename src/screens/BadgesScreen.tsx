@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, FlatList, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Dialog, Portal, Text, useTheme } from 'react-native-paper';
+import { Dimensions, FlatList, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,9 +12,7 @@ import { SPACING, RADIUS } from '../theme/spacing';
 
 const getColumns = () => {
   const width = Dimensions.get('window').width;
-  if (width >= 900) return 3;
-  if (width >= 600) return 3;
-  return 2;
+  return width >= 600 ? 3 : 2;
 };
 
 const BadgesScreen = () => {
@@ -51,10 +49,6 @@ const BadgesScreen = () => {
     loadCelebrated();
   }, [user?.uid]);
 
-  const earnedSet = useMemo(() => {
-    return new Set(Object.keys(badgesEarned).filter((id) => badgesEarned[id]));
-  }, [badgesEarned]);
-
   const unlockedSet = useMemo(() => {
     const set = new Set<string>();
     BADGE_DEFINITIONS.forEach((b) => {
@@ -87,70 +81,89 @@ const BadgesScreen = () => {
   }, [unlockedSet, user?.uid]);
 
   const columns = getColumns();
+  const unlockedCount = unlockedSet.size;
+  const totalBadges = BADGE_DEFINITIONS.length;
 
   const renderItem = ({ item }: { item: (typeof BADGE_DEFINITIONS)[number] }) => {
-    const unlocked = badgesEarned?.[item.id] === true || totalLends >= item.threshold;
+    const unlocked = unlockedSet.has(item.id);
     return (
       <Pressable
-        style={[styles.cardWrap, { width: `${100 / columns}%` }]}
+        style={[styles.cardWrap, { width: `${100 / columns}%` as any }]}
         onPress={() => {
           setSelectedId(item.id);
           setUnlockId(null);
           setModalVisible(true);
         }}
       >
-        <Card
-          mode="outlined"
+        <View
           style={[
             styles.card,
             {
-              backgroundColor: unlocked ? `${item.color}22` : theme.colors.surface,
+              backgroundColor: unlocked ? `${item.color}12` : theme.colors.surface,
               borderColor: unlocked ? item.color : theme.colors.outline,
             },
           ]}
         >
-          <Card.Content style={styles.cardContent}>
-            <View
-              style={[
-                styles.iconWrap,
-                { backgroundColor: unlocked ? `${item.color}33` : theme.colors.outline },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name={item.icon as any}
-                size={28}
-                color={unlocked ? item.color : '#9ca3af'}
-              />
-              {!unlocked ? (
-                <View style={styles.lockOverlay}>
-                  <MaterialCommunityIcons name="lock" size={14} color="#6b7280" />
-                </View>
-              ) : null}
+          <View
+            style={[
+              styles.iconCircle,
+              { backgroundColor: unlocked ? `${item.color}25` : `${theme.colors.outline}30` },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name={item.icon as any}
+              size={26}
+              color={unlocked ? item.color : '#b0b0b0'}
+            />
+          </View>
+          {!unlocked ? (
+            <View style={styles.lockBadge}>
+              <MaterialCommunityIcons name="lock" size={10} color="#fff" />
             </View>
-            <Text variant="titleSmall" style={styles.badgeTitle} numberOfLines={2}>
-              {item.title}
-            </Text>
-            <Text
-              variant="bodySmall"
-              style={{ color: unlocked ? theme.colors.onSurface : '#6b7280' }}
-            >
-              {unlocked ? 'Unlocked' : `${Math.min(totalLends, item.threshold)} / ${item.threshold} lends`}
-            </Text>
-          </Card.Content>
-        </Card>
+          ) : null}
+          <Text style={[styles.badgeTitle, { color: unlocked ? '#1C1C1E' : '#8E8E93' }]} numberOfLines={2}>
+            {item.title}
+          </Text>
+          <Text style={[styles.badgeSub, { color: unlocked ? '#34C759' : '#8E8E93' }]}>
+            {unlocked ? 'Unlocked' : `${Math.min(totalLends, item.threshold)} / ${item.threshold}`}
+          </Text>
+        </View>
       </Pressable>
     );
   };
 
-  const selected = BADGE_DEFINITIONS.find((b) => b.id === selectedId);
-  const selectedUnlocked = selected
-    ? badgesEarned?.[selected.id] === true || totalLends >= selected.threshold
-    : false;
-  const unlockedBadge = BADGE_DEFINITIONS.find((b) => b.id === unlockId);
+  const activeBadge = BADGE_DEFINITIONS.find((b) => b.id === (unlockId || selectedId));
+  const activeUnlocked = activeBadge ? unlockedSet.has(activeBadge.id) : false;
+  const isCelebrating = !!unlockId;
 
   return (
     <Screen>
-      <Text variant="titleMedium" style={styles.sectionSubtitle}>Lending Ladder</Text>
+      {/* Progress header */}
+      <View style={[styles.progressCard, { backgroundColor: theme.colors.surface }]}>
+        <View style={styles.progressTextRow}>
+          <Text style={[styles.progressTitle, { color: '#1C1C1E' }]}>Your Progress</Text>
+          <Text style={[styles.progressCount, { color: theme.colors.primary }]}>
+            {unlockedCount}/{totalBadges}
+          </Text>
+        </View>
+        <View style={[styles.progressBarBg, { backgroundColor: `${theme.colors.outline}30` }]}>
+          <View
+            style={[
+              styles.progressBarFill,
+              {
+                backgroundColor: theme.colors.primary,
+                width: `${totalBadges > 0 ? (unlockedCount / totalBadges) * 100 : 0}%` as any,
+              },
+            ]}
+          />
+        </View>
+        <Text style={styles.progressHint}>
+          {unlockedCount < totalBadges
+            ? `${BADGE_DEFINITIONS.find((b) => !unlockedSet.has(b.id))?.threshold ?? '?'} lends to unlock the next badge`
+            : 'All badges unlocked! Amazing!'}
+        </Text>
+      </View>
+
       <FlatList
         data={BADGE_DEFINITIONS}
         numColumns={columns}
@@ -158,147 +171,304 @@ const BadgesScreen = () => {
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.grid}
+        showsVerticalScrollIndicator={false}
       />
 
-      <Portal>
-        <Dialog
-          visible={modalVisible}
-          dismissable={false}
-          style={styles.dialog}
-          onDismiss={() => {
+      {/* Badge Detail Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setModalVisible(false);
+          setUnlockId(null);
+        }}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => {
             setModalVisible(false);
             setUnlockId(null);
           }}
         >
-          {Platform.OS !== 'web' && unlockId ? (
-            <ConfettiCannon
-              {...({
-                count: 120,
-                origin: { x: Dimensions.get('window').width / 2, y: 0 },
-                fallSpeed: 3000,
-                explosionSpeed: 350,
-                fadeOut: true,
-                duration: 5500,
-                autoStart: true,
-              } as any)}
-            />
-          ) : null}
-          {unlockId ? (
-            <Dialog.Title numberOfLines={2} style={styles.dialogTitle}>
-              Badge Unlocked 🎉
-            </Dialog.Title>
-          ) : null}
-          {unlockId && unlockedBadge ? (
-            <View style={styles.unlockBanner}>
-              <View style={[styles.unlockIcon, { backgroundColor: `${unlockedBadge.color}33` }]}>
-                <MaterialCommunityIcons
-                  name={unlockedBadge.icon as any}
-                  size={32}
-                  color={unlockedBadge.color}
-                />
-              </View>
-              <Text variant="titleMedium" style={styles.unlockTitle}>
-                {unlockedBadge.title}
-              </Text>
-              <Text variant="bodySmall" style={styles.unlockSub}>
-                Thanks for helping your community.
-              </Text>
-            </View>
-          ) : null}
-          {selected ? (
-            <View>
-              <Dialog.Title numberOfLines={2} style={styles.dialogTitle}>
-                {selected.title}
-              </Dialog.Title>
-              <Dialog.Content>
-                <ScrollView contentContainerStyle={styles.modalContent}>
-                  <Text variant="bodyMedium">{selected.description}</Text>
-                  <Text variant="bodySmall" style={styles.modalText}>
-                    Unlock requirement: {selected.threshold} lends
-                  </Text>
-                  <Text variant="bodySmall" style={styles.modalText}>
-                    Progress: {totalLends} / {selected.threshold}
-                  </Text>
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            {Platform.OS !== 'web' && isCelebrating ? (
+              <ConfettiCannon
+                {...({
+                  count: 120,
+                  origin: { x: Dimensions.get('window').width / 2, y: 0 },
+                  fallSpeed: 3000,
+                  explosionSpeed: 350,
+                  fadeOut: true,
+                  duration: 5500,
+                  autoStart: true,
+                } as any)}
+              />
+            ) : null}
+
+            {activeBadge ? (
+              <>
+                {isCelebrating ? (
+                  <Text style={styles.celebrateHeader}>Badge Unlocked!</Text>
+                ) : null}
+
+                <View
+                  style={[
+                    styles.modalIconCircle,
+                    { backgroundColor: activeUnlocked ? `${activeBadge.color}20` : '#f3f4f6' },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name={activeBadge.icon as any}
+                    size={44}
+                    color={activeUnlocked ? activeBadge.color : '#b0b0b0'}
+                  />
+                </View>
+
+                <Text style={styles.modalTitle}>{activeBadge.title}</Text>
+
+                <View
+                  style={[
+                    styles.statusChip,
+                    {
+                      backgroundColor: activeUnlocked ? '#34C75920' : '#8E8E9320',
+                    },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name={activeUnlocked ? 'check-circle' : 'lock'}
+                    size={14}
+                    color={activeUnlocked ? '#34C759' : '#8E8E93'}
+                  />
                   <Text
-                    variant="bodySmall"
-                    style={[styles.modalText, { color: selectedUnlocked ? '#16a34a' : '#6b7280' }]}
+                    style={[
+                      styles.statusText,
+                      { color: activeUnlocked ? '#34C759' : '#8E8E93' },
+                    ]}
                   >
-                    {selectedUnlocked ? 'Unlocked' : 'Locked'}
+                    {activeUnlocked ? 'Unlocked' : 'Locked'}
                   </Text>
-                </ScrollView>
-              </Dialog.Content>
-            </View>
-          ) : null}
-          <Dialog.Actions>
-            <Button
-              onPress={() => {
-                setModalVisible(false);
-                setUnlockId(null);
-              }}
-            >
-              Nice!
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+                </View>
+
+                <Text style={styles.modalDesc}>{activeBadge.description}</Text>
+
+                {/* Progress bar inside modal */}
+                <View style={styles.modalProgressSection}>
+                  <View style={styles.modalProgressRow}>
+                    <Text style={styles.modalProgressLabel}>Progress</Text>
+                    <Text style={styles.modalProgressValue}>
+                      {Math.min(totalLends, activeBadge.threshold)} / {activeBadge.threshold}
+                    </Text>
+                  </View>
+                  <View style={[styles.modalProgressBg, { backgroundColor: '#f3f4f6' }]}>
+                    <View
+                      style={[
+                        styles.modalProgressFill,
+                        {
+                          backgroundColor: activeUnlocked ? activeBadge.color : '#C7C7CC',
+                          width: `${Math.min((totalLends / activeBadge.threshold) * 100, 100)}%` as any,
+                        },
+                      ]}
+                    />
+                  </View>
+                </View>
+
+                <Pressable
+                  onPress={() => {
+                    setModalVisible(false);
+                    setUnlockId(null);
+                  }}
+                  style={({ pressed }) => [
+                    styles.modalBtn,
+                    {
+                      backgroundColor: activeUnlocked ? activeBadge.color : '#8E8E93',
+                      opacity: pressed ? 0.85 : 1,
+                    },
+                  ]}
+                >
+                  <Text style={styles.modalBtnText}>
+                    {isCelebrating ? 'Awesome!' : 'Got it'}
+                  </Text>
+                </Pressable>
+              </>
+            ) : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionSubtitle: { fontWeight: '600', marginBottom: SPACING.sm, color: '#6b7280' },
-  grid: { paddingBottom: SPACING.xl },
-  cardWrap: { padding: SPACING.xs },
-  card: { borderRadius: RADIUS.lg, overflow: 'hidden' },
-  cardContent: { gap: SPACING.xs, alignItems: 'center', paddingVertical: SPACING.md },
-  badgeTitle: { fontWeight: '600', textAlign: 'center' },
-  iconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: RADIUS.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  lockOverlay: {
-    position: 'absolute',
-    right: -4,
-    bottom: -4,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 8,
-    padding: 2,
-  },
-  unlockBanner: {
-    alignItems: 'center',
-    gap: SPACING.xs,
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.sm,
-  },
-  unlockIcon: {
-    width: 60,
-    height: 60,
+  /* Progress header */
+  progressCard: {
+    marginHorizontal: SPACING.sm,
+    marginBottom: SPACING.sm,
+    padding: SPACING.md,
     borderRadius: RADIUS.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    gap: 8,
   },
-  unlockTitle: {
+  progressTextRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  progressTitle: {
+    fontSize: 16,
     fontWeight: '700',
   },
-  unlockSub: {
-    color: '#6b7280',
+  progressCount: {
+    fontSize: 16,
+    fontWeight: '700',
   },
-  modalText: { marginTop: SPACING.xs },
-  dialog: {
-    width: '92%',
-    maxWidth: 420,
+  progressBarBg: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressHint: {
+    fontSize: 12,
+    color: '#8E8E93',
+  },
+
+  /* Grid */
+  grid: { paddingHorizontal: SPACING.xs, paddingBottom: 80 },
+  cardWrap: { padding: SPACING.xs },
+  card: {
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    padding: SPACING.md,
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 130,
+    justifyContent: 'center',
+  },
+  iconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockBadge: {
+    position: 'absolute',
+    top: SPACING.md + 40,
     alignSelf: 'center',
-    borderRadius: RADIUS.md,
+    backgroundColor: '#b0b0b0',
+    borderRadius: 8,
+    width: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  modalContent: {
-    paddingBottom: SPACING.sm,
-  },
-  dialogTitle: {
+  badgeTitle: {
+    fontSize: 13,
+    fontWeight: '700',
     textAlign: 'center',
-    flexShrink: 1,
+  },
+  badgeSub: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+
+  /* Modal */
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 28,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+    gap: 12,
+  },
+  celebrateHeader: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFD60A',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+  },
+  modalIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1C1C1E',
+    textAlign: 'center',
+  },
+  statusChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  modalDesc: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#3C3C43',
+    textAlign: 'center',
+  },
+  modalProgressSection: {
+    width: '100%',
+    gap: 6,
+    marginTop: 4,
+  },
+  modalProgressRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalProgressLabel: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontWeight: '500',
+  },
+  modalProgressValue: {
+    fontSize: 12,
+    color: '#1C1C1E',
+    fontWeight: '600',
+  },
+  modalProgressBg: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  modalProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  modalBtn: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  modalBtnText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
 
