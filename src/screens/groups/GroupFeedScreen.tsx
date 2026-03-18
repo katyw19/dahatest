@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
   },
   listHeader: {
     paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.xs,
+    paddingTop: SPACING.sm,
     paddingBottom: SPACING.md,
     gap: SPACING.sm,
   },
