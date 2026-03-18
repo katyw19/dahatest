@@ -73,9 +73,7 @@ const MyRequestsScreen = () => {
 
   const renderPostRow = (item: PostRequest) => {
     const isOpen = item.status === 'open';
-    const statusColor = isOpen ? '#34C759' : '#FF9500';
     const statusLabel = isOpen ? 'Open' : 'Borrowed';
-    const statusIcon = isOpen ? 'clock-outline' : 'check-circle-outline';
 
     return (
       <Pressable
@@ -119,10 +117,7 @@ const MyRequestsScreen = () => {
 
         {/* Status + chevron */}
         <View style={styles.postRight}>
-          <View style={[styles.statusChip, { backgroundColor: `${statusColor}15` }]}>
-            <MaterialCommunityIcons name={statusIcon as any} size={12} color={statusColor} />
-            <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
-          </View>
+          <Text style={styles.statusText}>{statusLabel}</Text>
           <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
         </View>
       </Pressable>
@@ -148,12 +143,12 @@ const MyRequestsScreen = () => {
             </View>
             <View style={[styles.statDivider, { backgroundColor: theme.colors.outline }]} />
             <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: '#34C759' }]}>{openPosts.length}</Text>
+              <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{openPosts.length}</Text>
               <Text style={styles.statLabel}>Open</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: theme.colors.outline }]} />
             <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: '#FF9500' }]}>{borrowedPosts.length}</Text>
+              <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{borrowedPosts.length}</Text>
               <Text style={styles.statLabel}>Borrowed</Text>
             </View>
           </View>
@@ -161,13 +156,7 @@ const MyRequestsScreen = () => {
           {/* Open requests */}
           {openPosts.length > 0 ? (
             <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View style={[styles.sectionDot, { backgroundColor: '#34C759' }]} />
-                <Text style={[styles.sectionTitle, { color: '#1C1C1E' }]}>Open Requests</Text>
-                <View style={[styles.countBadge, { backgroundColor: '#34C75920' }]}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#34C759' }}>{openPosts.length}</Text>
-                </View>
-              </View>
+              <Text style={[styles.sectionTitle, { color: '#8E8E93' }]}>Open Requests</Text>
               <View style={[styles.listCard, { backgroundColor: theme.colors.surface }]}>
                 {openPosts.map((item, i) => (
                   <View key={item.id}>
@@ -182,13 +171,7 @@ const MyRequestsScreen = () => {
           {/* Borrowed */}
           {borrowedPosts.length > 0 ? (
             <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View style={[styles.sectionDot, { backgroundColor: '#FF9500' }]} />
-                <Text style={[styles.sectionTitle, { color: '#1C1C1E' }]}>Borrowed</Text>
-                <View style={[styles.countBadge, { backgroundColor: '#FF950020' }]}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#FF9500' }}>{borrowedPosts.length}</Text>
-                </View>
-              </View>
+              <Text style={[styles.sectionTitle, { color: '#8E8E93' }]}>Borrowed</Text>
               <View style={[styles.listCard, { backgroundColor: theme.colors.surface }]}>
                 {borrowedPosts.map((item, i) => (
                   <View key={item.id}>
@@ -263,28 +246,14 @@ const styles = StyleSheet.create({
 
   /* Sections */
   section: {
-    gap: 8,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 4,
-  },
-  sectionDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    gap: 6,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    flex: 1,
-  },
-  countBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    paddingHorizontal: 4,
   },
 
   listCard: {
@@ -347,17 +316,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 6,
   },
-  statusChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
   statusText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#8E8E93',
   },
 
   /* Empty */
