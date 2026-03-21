@@ -7,8 +7,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
 import { useGroupContext } from './GroupProvider';
 import { useAuth } from '../../context/AuthContext';
-import { listenPosts } from '../../services/posts';
-import type { PostRequest } from '../../models/postRequest';
+import { listenPostsByAuthor } from '../../services/posts';
+import type { PostRequest, PostType } from '../../models/postRequest';
 import { SPACING, RADIUS } from '../../theme/spacing';
 
 type Nav = NativeStackNavigationProp<GroupStackParamList>;
@@ -30,6 +30,7 @@ const MyRequestsScreen = () => {
   const navigation = useNavigation<Nav>();
   const { currentGroup } = useGroupContext();
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<PostType>('daha');
   const [posts, setPosts] = useState<PostRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,10 +43,10 @@ const MyRequestsScreen = () => {
     setLoading(true);
     let unsub: (() => void) | undefined;
     try {
-      unsub = listenPosts(currentGroup.id, (data) => {
+      unsub = listenPostsByAuthor(currentGroup.id, user.uid, (data) => {
         setPosts(data);
         setLoading(false);
-      });
+      }, activeTab);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load posts');
       setLoading(false);
@@ -53,15 +54,15 @@ const MyRequestsScreen = () => {
     return () => {
       if (unsub) unsub();
     };
-  }, [currentGroup?.id, user?.uid]);
+  }, [currentGroup?.id, user?.uid, activeTab]);
 
-  const myPosts = useMemo(
-    () => posts.filter((p) => p.authorUid === user?.uid),
-    [posts, user?.uid]
+  const openPosts = useMemo(() => posts.filter((p) => p.status === 'open'), [posts]);
+  const closedPosts = useMemo(
+    () => posts.filter((p) => p.status === 'borrowed' || p.status === 'claimed'),
+    [posts]
   );
 
-  const openPosts = useMemo(() => myPosts.filter((p) => p.status === 'open'), [myPosts]);
-  const borrowedPosts = useMemo(() => myPosts.filter((p) => p.status === 'borrowed'), [myPosts]);
+  const isDawa = activeTab === 'dawa';
 
   if (loading) {
     return (
@@ -73,7 +74,7 @@ const MyRequestsScreen = () => {
 
   const renderPostRow = (item: PostRequest) => {
     const isOpen = item.status === 'open';
-    const statusLabel = isOpen ? 'Open' : 'Borrowed';
+    const statusLabel = isOpen ? 'Open' : isDawa ? 'Claimed' : 'Borrowed';
 
     return (
       <Pressable
@@ -84,16 +85,18 @@ const MyRequestsScreen = () => {
           { backgroundColor: pressed ? `${theme.colors.primary}08` : theme.colors.surface },
         ]}
       >
-        {/* Thumbnail or icon */}
         {item.photoUrl ? (
           <Image source={{ uri: item.photoUrl }} style={styles.thumbnail} />
         ) : (
           <View style={[styles.thumbnailPlaceholder, { backgroundColor: `${theme.colors.primary}12` }]}>
-            <MaterialCommunityIcons name="package-variant" size={22} color={theme.colors.primary} />
+            <MaterialCommunityIcons
+              name={isDawa ? 'gift-outline' : 'package-variant'}
+              size={22}
+              color={theme.colors.primary}
+            />
           </View>
         )}
 
-        {/* Info */}
         <View style={styles.postInfo}>
           <Text style={[styles.postTitle, { color: '#1C1C1E' }]} numberOfLines={1}>
             {item.text}
@@ -115,7 +118,6 @@ const MyRequestsScreen = () => {
           </View>
         </View>
 
-        {/* Status + chevron */}
         <View style={styles.postRight}>
           <Text style={styles.statusText}>{statusLabel}</Text>
           <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
@@ -129,16 +131,42 @@ const MyRequestsScreen = () => {
       style={{ flex: 1, backgroundColor: theme.colors.background }}
       contentContainerStyle={[
         styles.list,
-        myPosts.length === 0 ? styles.empty : undefined,
+        posts.length === 0 ? styles.empty : undefined,
       ]}
       data={[]}
       renderItem={null}
       ListHeaderComponent={
         <View style={styles.content}>
+          {/* Tab switcher */}
+          <View style={[styles.tabSwitcher, { backgroundColor: theme.colors.surface }]}>
+            <Pressable
+              onPress={() => setActiveTab('daha')}
+              style={[
+                styles.tabButton,
+                activeTab === 'daha' && { backgroundColor: theme.colors.primary },
+              ]}
+            >
+              <Text style={[styles.tabText, { color: activeTab === 'daha' ? '#fff' : '#8E8E93' }]}>
+                My Requests
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setActiveTab('dawa')}
+              style={[
+                styles.tabButton,
+                activeTab === 'dawa' && { backgroundColor: theme.colors.primary },
+              ]}
+            >
+              <Text style={[styles.tabText, { color: activeTab === 'dawa' ? '#fff' : '#8E8E93' }]}>
+                My Donations
+              </Text>
+            </Pressable>
+          </View>
+
           {/* Stats summary */}
           <View style={[styles.statsRow, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{myPosts.length}</Text>
+              <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{posts.length}</Text>
               <Text style={styles.statLabel}>Total</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: theme.colors.outline }]} />
@@ -148,15 +176,17 @@ const MyRequestsScreen = () => {
             </View>
             <View style={[styles.statDivider, { backgroundColor: theme.colors.outline }]} />
             <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{borrowedPosts.length}</Text>
-              <Text style={styles.statLabel}>Borrowed</Text>
+              <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{closedPosts.length}</Text>
+              <Text style={styles.statLabel}>{isDawa ? 'Claimed' : 'Borrowed'}</Text>
             </View>
           </View>
 
-          {/* Open requests */}
+          {/* Open posts */}
           {openPosts.length > 0 ? (
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: '#8E8E93' }]}>Open Requests</Text>
+              <Text style={[styles.sectionTitle, { color: '#8E8E93' }]}>
+                {isDawa ? 'Active Donations' : 'Open Requests'}
+              </Text>
               <View style={[styles.listCard, { backgroundColor: theme.colors.surface }]}>
                 {openPosts.map((item, i) => (
                   <View key={item.id}>
@@ -168,12 +198,14 @@ const MyRequestsScreen = () => {
             </View>
           ) : null}
 
-          {/* Borrowed */}
-          {borrowedPosts.length > 0 ? (
+          {/* Closed posts */}
+          {closedPosts.length > 0 ? (
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: '#8E8E93' }]}>Borrowed</Text>
+              <Text style={[styles.sectionTitle, { color: '#8E8E93' }]}>
+                {isDawa ? 'Claimed' : 'Borrowed'}
+              </Text>
               <View style={[styles.listCard, { backgroundColor: theme.colors.surface }]}>
-                {borrowedPosts.map((item, i) => (
+                {closedPosts.map((item, i) => (
                   <View key={item.id}>
                     {i > 0 ? <View style={[styles.rowDivider, { backgroundColor: theme.colors.outline }]} /> : null}
                     {renderPostRow(item)}
@@ -184,12 +216,20 @@ const MyRequestsScreen = () => {
           ) : null}
 
           {/* All empty */}
-          {myPosts.length === 0 ? (
+          {posts.length === 0 ? (
             <View style={[styles.emptyCard, { backgroundColor: theme.colors.surface }]}>
-              <MaterialCommunityIcons name="package-variant-closed" size={40} color="#C7C7CC" />
-              <Text style={styles.emptyTitle}>No requests yet</Text>
+              <MaterialCommunityIcons
+                name={isDawa ? 'gift-outline' : 'package-variant-closed'}
+                size={40}
+                color="#C7C7CC"
+              />
+              <Text style={styles.emptyTitle}>
+                {isDawa ? 'No donations yet' : 'No requests yet'}
+              </Text>
               <Text style={styles.emptyHint}>
-                Your borrow requests will show up here
+                {isDawa
+                  ? 'Your donations will show up here'
+                  : 'Your borrow requests will show up here'}
               </Text>
             </View>
           ) : null}
@@ -216,6 +256,24 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: SPACING.sm,
+  },
+
+  /* Tab switcher */
+  tabSwitcher: {
+    flexDirection: 'row',
+    borderRadius: RADIUS.lg,
+    padding: 4,
+    gap: 4,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 
   /* Stats */

@@ -2,12 +2,14 @@ import { StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
 type Props = {
-  status: 'open' | 'borrowed';
+  status: 'open' | 'borrowed' | 'claimed';
 };
 
 const StatusPill = ({ status }: Props) => {
   const theme = useTheme();
   const isOpen = status === 'open';
+  const label = status === 'claimed' ? 'Claimed' : status === 'borrowed' ? 'Borrowed' : 'Open';
+
   return (
     <View
       style={[
@@ -25,7 +27,7 @@ const StatusPill = ({ status }: Props) => {
           fontWeight: '600',
         }}
       >
-        {isOpen ? 'Open' : 'Borrowed'}
+        {label}
       </Text>
     </View>
   );

@@ -10,8 +10,8 @@ export type Offer = {
   lenderLastName?: string;
   lenderGradeTag?: string;
   lenderTrustScore?: number;
-  itemDescription: string;
-  condition: OfferCondition;
+  itemDescription?: string;
+  condition?: OfferCondition;
   photoUrl?: string;
   notes?: string;
   createdAt: Date | null;

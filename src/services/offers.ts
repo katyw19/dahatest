@@ -22,7 +22,6 @@ export const listenOffersForPost = (
   const db = getFirebaseDb();
   if (!db) throw new Error('Firestore not configured');
   const offersRef = collection(db, `groups/${groupId}/posts/${postId}/offers`);
-  // Avoid index: pull all and sort client side
   return onSnapshot(offersRef, (snapshot) => {
     const data = snapshot.docs.map((docSnap) => ({
       ...(docSnap.data() as Offer),
@@ -48,8 +47,8 @@ export const createOffer = async (
     lenderLastName: string;
     lenderGradeTag: string;
     lenderTrustScore: number;
-    itemDescription: string;
-    condition: string;
+    itemDescription?: string;
+    condition?: string;
     notes?: string;
     photoUri?: string;
   }
@@ -81,19 +80,26 @@ export const createOffer = async (
     photoUrl = await getDownloadURL(storageRef);
   }
 
-  await addDoc(offersRef, {
+  const data: Record<string, any> = {
     lenderUid: payload.lenderUid,
     lenderFirstName: payload.lenderFirstName,
     lenderLastName: payload.lenderLastName,
     lenderGradeTag: payload.lenderGradeTag,
     lenderTrustScore: payload.lenderTrustScore,
-    itemDescription: payload.itemDescription,
-    condition: payload.condition,
     notes: payload.notes ?? '',
     photoUrl: photoUrl ?? '',
     createdAt: serverTimestamp(),
     status: 'pending',
-  });
+  };
+
+  if (payload.itemDescription) {
+    data.itemDescription = payload.itemDescription;
+  }
+  if (payload.condition) {
+    data.condition = payload.condition;
+  }
+
+  await addDoc(offersRef, data);
 };
 
 export const acceptOffer = async (
@@ -105,9 +111,9 @@ export const acceptOffer = async (
   const db = getFirebaseDb();
   if (!db) throw new Error('Firestore not configured');
 
-  // Pull post to capture borrower names for the thread
   const postSnap = await getDoc(doc(db, `groups/${groupId}/posts/${postId}`));
   const postData: any = postSnap.exists() ? postSnap.data() : {};
+  const isDawa = postData.type === 'dawa';
 
   const offersRef = collection(db, `groups/${groupId}/posts/${postId}/offers`);
   const offersSnap = await getDocs(offersRef);
@@ -119,7 +125,7 @@ export const acceptOffer = async (
   });
 
   batch.update(doc(db, `groups/${groupId}/posts/${postId}`), {
-    status: 'borrowed',
+    status: isDawa ? 'claimed' : 'borrowed',
     borrowedAt: serverTimestamp(),
     acceptedOfferId: offer.id,
   });
@@ -129,12 +135,13 @@ export const acceptOffer = async (
     groupId,
     postId,
     offerId: offer.id,
-    borrowerUid: postAuthorUid,
-    borrowerFirstName: postData.authorFirstName ?? '',
-    borrowerLastName: postData.authorLastName ?? '',
-    lenderUid: offer.lenderUid,
-    lenderFirstName: offer.lenderFirstName ?? '',
-    lenderLastName: offer.lenderLastName ?? '',
+    // For DAWA: post author is the donor (lender), bid maker is the recipient (borrower)
+    borrowerUid: isDawa ? offer.lenderUid : postAuthorUid,
+    borrowerFirstName: isDawa ? (offer.lenderFirstName ?? '') : (postData.authorFirstName ?? ''),
+    borrowerLastName: isDawa ? (offer.lenderLastName ?? '') : (postData.authorLastName ?? ''),
+    lenderUid: isDawa ? postAuthorUid : offer.lenderUid,
+    lenderFirstName: isDawa ? (postData.authorFirstName ?? '') : (offer.lenderFirstName ?? ''),
+    lenderLastName: isDawa ? (postData.authorLastName ?? '') : (offer.lenderLastName ?? ''),
     isOpen: true,
     createdAt: serverTimestamp(),
   });
@@ -142,11 +149,3 @@ export const acceptOffer = async (
   await batch.commit();
   return threadRef.id;
 };
-
-// Manual test checklist (Phase 8)
-// 1) Member A creates a post in Group X.
-// 2) Member B opens the post and sends an offer (with or without photo).
-// 3) Member A opens "See Offers" and views the pending offer.
-// 4) Member A accepts the offer; post becomes Borrowed and other offers show Rejected.
-// 5) PostDetail now shows Borrowed and "I can lend this" is disabled for everyone.
-// 6) groups/{groupId}/threads has a new thread document linking post+offer.

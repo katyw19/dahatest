@@ -11,6 +11,9 @@ import MyRequestsScreen from '../screens/groups/MyRequestsScreen';
 import GroupHeaderTitle from '../components/GroupHeaderTitle';
 import OfferCreateScreen from '../screens/groups/OfferCreateScreen';
 import OffersListScreen from '../screens/groups/OffersListScreen';
+import CreateDonationScreen from '../screens/groups/CreateDonationScreen';
+import BidCreateScreen from '../screens/groups/BidCreateScreen';
+import BidsListScreen from '../screens/groups/BidsListScreen';
 import ChatThreadScreen from '../screens/groups/ChatThreadScreen';
 import ChatsListScreen from '../screens/groups/ChatsListScreen';
 import ReviewScreen from '../screens/groups/ReviewScreen';
@@ -52,8 +55,11 @@ export type GroupStackParamList = {
   CreateGroupDetails: undefined;
   PostDetail: { postId: string; offeredSuccess?: boolean };
   CreatePost: undefined;
+  CreateDonation: undefined;
   OfferCreate: { postId: string };
   OffersList: { postId: string; postAuthorUid: string };
+  BidCreate: { postId: string };
+  BidsList: { postId: string; postAuthorUid: string };
   ChatThread: { threadId: string };
   ChatsList: undefined;
   Review: { threadId: string };
@@ -100,8 +106,11 @@ const FeedStackScreens = () => (
     />
     <FeedStack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: 'Request' }} />
     <FeedStack.Screen name="CreatePost" component={CreatePostScreen} options={{ title: 'New Request' }} />
+    <FeedStack.Screen name="CreateDonation" component={CreateDonationScreen} options={{ title: 'New Donation' }} />
     <FeedStack.Screen name="OfferCreate" component={OfferCreateScreen} options={{ title: 'Send Offer' }} />
     <FeedStack.Screen name="OffersList" component={OffersListScreen} options={{ title: 'Offers' }} />
+    <FeedStack.Screen name="BidCreate" component={BidCreateScreen} options={{ title: 'Request Item' }} />
+    <FeedStack.Screen name="BidsList" component={BidsListScreen} options={{ title: 'Requests' }} />
     <FeedStack.Screen name="ChatThread" component={ChatThreadScreen} options={{ title: 'Chat' }} />
     <FeedStack.Screen name="ChatsList" component={ChatsListScreen} options={{ title: 'Chats' }} />
     <FeedStack.Screen name="SwitchGroup" component={SwitchGroupScreen} options={{ title: 'Switch Group' }} />
@@ -157,8 +166,11 @@ const RequestsStackScreens = () => (
     />
     <RequestsStack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: 'Request' }} />
     <RequestsStack.Screen name="CreatePost" component={CreatePostScreen} options={{ title: 'New Request' }} />
+    <RequestsStack.Screen name="CreateDonation" component={CreateDonationScreen} options={{ title: 'New Donation' }} />
     <RequestsStack.Screen name="OfferCreate" component={OfferCreateScreen} options={{ title: 'Send Offer' }} />
     <RequestsStack.Screen name="OffersList" component={OffersListScreen} options={{ title: 'Offers' }} />
+    <RequestsStack.Screen name="BidCreate" component={BidCreateScreen} options={{ title: 'Request Item' }} />
+    <RequestsStack.Screen name="BidsList" component={BidsListScreen} options={{ title: 'Requests' }} />
     <RequestsStack.Screen name="ChatThread" component={ChatThreadScreen} options={{ title: 'Chat' }} />
     <RequestsStack.Screen name="ChatsList" component={ChatsListScreen} options={{ title: 'Chats' }} />
     <RequestsStack.Screen name="SwitchGroup" component={SwitchGroupScreen} options={{ title: 'Switch Group' }} />
