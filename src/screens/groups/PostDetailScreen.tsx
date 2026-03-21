@@ -54,7 +54,8 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
   const offersSafe = offers ?? [];
 
   const isAuthor = !!uid && !!post?.authorUid && uid === post.authorUid;
-  const isBorrowed = post?.status === 'borrowed';
+  const isDawa = post?.type === 'dawa';
+  const isClosed = post?.status === 'borrowed' || post?.status === 'claimed';
 
   const alreadyOffered = useMemo(() => {
     if (!uid) return false;
@@ -280,18 +281,18 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
           style={[
             styles.statusBadge,
             {
-              backgroundColor: isBorrowed ? '#F0F0F0' : `${theme.colors.primary}14`,
-              borderColor: isBorrowed ? '#D1D1D6' : theme.colors.primary,
+              backgroundColor: isClosed ? '#F0F0F0' : `${theme.colors.primary}14`,
+              borderColor: isClosed ? '#D1D1D6' : theme.colors.primary,
             },
           ]}
         >
           <Text
             style={[
               styles.statusText,
-              { color: isBorrowed ? '#8E8E93' : theme.colors.primary },
+              { color: isClosed ? '#8E8E93' : theme.colors.primary },
             ]}
           >
-            {isBorrowed ? 'Borrowed' : 'Open'}
+            {isClosed ? (isDawa ? 'Claimed' : 'Borrowed') : 'Open'}
           </Text>
         </View>
       </View>
@@ -309,7 +310,7 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
       ) : null}
 
       {/* ── Tags ─────────────────────────────────────── */}
-      {(post.category || post.audienceTag || post.size || post.neededBy) ? (
+      {(post.category || post.audienceTag || post.size || post.neededBy || (isDawa && post.condition)) ? (
         <View style={styles.tagsRow}>
           {post.category ? (
             <View style={[styles.tag, { backgroundColor: theme.colors.secondary }]}>
@@ -340,6 +341,13 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
               </Text>
             </View>
           ) : null}
+          {isDawa && post.condition ? (
+            <View style={[styles.tag, { backgroundColor: theme.colors.secondary }]}>
+              <Text style={[styles.tagLabel, { color: theme.colors.onSecondary }]}>
+                {post.condition.charAt(0).toUpperCase() + post.condition.slice(1)} condition
+              </Text>
+            </View>
+          ) : null}
         </View>
       ) : null}
 
@@ -349,9 +357,14 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
       {/* ── Accepted offer info ──────────────────────── */}
       {acceptedOffer ? (
         <View style={styles.acceptedRow}>
-          <MaterialCommunityIcons name="handshake-outline" size={18} color={theme.colors.primary} />
+          <MaterialCommunityIcons
+            name={isDawa ? 'gift-outline' : 'handshake-outline'}
+            size={18}
+            color={theme.colors.primary}
+          />
           <Text style={[styles.acceptedText, { color: theme.colors.onSurface }]}>
-            Lending from <Text style={{ fontWeight: '700' }}>{acceptedLenderName}</Text>
+            {isDawa ? 'Giving to' : 'Lending from'}{' '}
+            <Text style={{ fontWeight: '700' }}>{acceptedLenderName}</Text>
           </Text>
         </View>
       ) : null}
@@ -370,24 +383,32 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
         </Pressable>
       ) : null}
 
-      {!isAuthor && !isBorrowed ? (
+      {!isAuthor && !isClosed ? (
         alreadyOffered ? (
           <View style={styles.infoRow}>
             <MaterialCommunityIcons name="check-circle-outline" size={18} color="#8E8E93" />
-            <Text style={styles.infoText}>You already made an offer on this request.</Text>
+            <Text style={styles.infoText}>
+              {isDawa ? 'You already requested this item.' : 'You already made an offer on this request.'}
+            </Text>
           </View>
         ) : (
           <Pressable
-            onPress={() => navigation.navigate('OfferCreate', { postId })}
+            onPress={() =>
+              navigation.navigate(isDawa ? 'BidCreate' : 'OfferCreate', { postId })
+            }
             disabled={!currentMembership}
             style={({ pressed }) => [
               styles.primaryBtn,
               { backgroundColor: theme.colors.primary, opacity: pressed ? 0.85 : 1 },
             ]}
           >
-            <MaterialCommunityIcons name="hand-heart-outline" size={18} color={theme.colors.onPrimary} />
+            <MaterialCommunityIcons
+              name={isDawa ? 'hand-wave-outline' : 'hand-heart-outline'}
+              size={18}
+              color={theme.colors.onPrimary}
+            />
             <Text style={[styles.primaryBtnText, { color: theme.colors.onPrimary }]}>
-              I can lend this
+              {isDawa ? 'I want this' : 'I can lend this'}
             </Text>
           </Pressable>
         )
@@ -396,7 +417,10 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
       {isAuthor ? (
         <Pressable
           onPress={() =>
-            navigation.navigate('OffersList', { postId, postAuthorUid: post.authorUid })
+            navigation.navigate(isDawa ? 'BidsList' : 'OffersList', {
+              postId,
+              postAuthorUid: post.authorUid,
+            })
           }
           style={({ pressed }) => [
             styles.outlineBtn,
@@ -406,9 +430,13 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
             },
           ]}
         >
-          <MaterialCommunityIcons name="gift-outline" size={18} color={theme.colors.primary} />
+          <MaterialCommunityIcons
+            name={isDawa ? 'hand-wave-outline' : 'gift-outline'}
+            size={18}
+            color={theme.colors.primary}
+          />
           <Text style={[styles.outlineBtnText, { color: theme.colors.primary }]}>
-            See Offers ({offersSafe.length})
+            {isDawa ? `See Requests (${offersSafe.length})` : `See Offers (${offersSafe.length})`}
           </Text>
         </Pressable>
       ) : null}

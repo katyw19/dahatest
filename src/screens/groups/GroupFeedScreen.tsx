@@ -7,7 +7,7 @@ import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useGroupContext } from './GroupProvider';
 import { listenPosts } from '../../services/posts';
-import type { PostRequest } from '../../models/postRequest';
+import type { PostRequest, PostType } from '../../models/postRequest';
 import {
   listenPinnedAnnouncements,
   unpinAnnouncement,
@@ -44,6 +44,7 @@ const GroupFeedScreen = () => {
   const navigation = useNavigation<Nav>();
   const { currentGroup, currentMembership } = useGroupContext();
 
+  const [activeTab, setActiveTab] = useState<PostType>('daha');
   const [posts, setPosts] = useState<PostRequest[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,20 +120,20 @@ const GroupFeedScreen = () => {
 
   const sortedPosts = useMemo(() => {
     const sorted = [...filteredPosts].sort((a, b) => {
-      if (a.status !== b.status) {
-        return a.status === 'open' ? -1 : 1; // Open before borrowed
-      }
+      const aOpen = a.status === 'open';
+      const bOpen = b.status === 'open';
+      if (aOpen !== bOpen) return aOpen ? -1 : 1;
       const ta: any = (a as any).createdAt;
       const tb: any = (b as any).createdAt;
       const da = ta?.toDate ? ta.toDate().getTime() : 0;
       const dbt = tb?.toDate ? tb.toDate().getTime() : 0;
-      return dbt - da; // newest first within each section
+      return dbt - da;
     });
     return sorted;
   }, [filteredPosts]);
 
-  const firstBorrowedIndex = useMemo(() => {
-    return sortedPosts.findIndex((p) => p.status === 'borrowed');
+  const firstClosedIndex = useMemo(() => {
+    return sortedPosts.findIndex((p) => p.status === 'borrowed' || p.status === 'claimed');
   }, [sortedPosts]);
 
   useLayoutEffect(() => {
@@ -166,16 +167,13 @@ const GroupFeedScreen = () => {
     try {
       unsubPosts = listenPosts(currentGroup.id, (data) => {
         setPosts(data);
-        // We do not setLoading(false) here because announcements may still be loading.
-      });
+      }, activeTab);
 
       unsubAnn = listenPinnedAnnouncements(currentGroup.id, (data) => {
         setAnnouncements(data);
-        // Once we receive announcements (even empty), feed can be considered loaded.
         setLoading(false);
       });
 
-      // Fallback: if announcements listener never fires for some reason, stop loading after a moment.
       const t = setTimeout(() => setLoading(false), 1500);
 
       return () => {
@@ -191,7 +189,7 @@ const GroupFeedScreen = () => {
         if (unsubAnn) unsubAnn();
       };
     }
-  }, [currentGroup?.id]);
+  }, [currentGroup?.id, activeTab]);
 
   // ✅ Early returns AFTER hooks
   if (!currentGroup || !currentMembership) {
@@ -392,8 +390,60 @@ const GroupFeedScreen = () => {
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <View style={styles.listHeader}>
+            {/* DAHA / DAWA tab switcher */}
+            <View style={[styles.tabSwitcher, { backgroundColor: theme.colors.surface }]}>
+              <Pressable
+                onPress={() => setActiveTab('daha')}
+                style={[
+                  styles.tabButton,
+                  activeTab === 'daha' && { backgroundColor: theme.colors.primary },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    { color: activeTab === 'daha' ? '#fff' : '#8E8E93' },
+                  ]}
+                >
+                  DAHA
+                </Text>
+                <Text
+                  style={[
+                    styles.tabSubtext,
+                    { color: activeTab === 'daha' ? 'rgba(255,255,255,0.7)' : '#C7C7CC' },
+                  ]}
+                >
+                  Does anyone have a...
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setActiveTab('dawa')}
+                style={[
+                  styles.tabButton,
+                  activeTab === 'dawa' && { backgroundColor: theme.colors.primary },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    { color: activeTab === 'dawa' ? '#fff' : '#8E8E93' },
+                  ]}
+                >
+                  DAWA
+                </Text>
+                <Text
+                  style={[
+                    styles.tabSubtext,
+                    { color: activeTab === 'dawa' ? 'rgba(255,255,255,0.7)' : '#C7C7CC' },
+                  ]}
+                >
+                  Does anyone want a...
+                </Text>
+              </Pressable>
+            </View>
+
             <TextInput
-              placeholder="Search requests…"
+              placeholder={activeTab === 'daha' ? 'Search requests…' : 'Search donations…'}
               mode="outlined"
               dense
               value={searchQuery}
@@ -407,7 +457,7 @@ const GroupFeedScreen = () => {
                 ) : null
               }
             />
-            {activeAnnouncements.length ? (
+            {activeTab === 'daha' && activeAnnouncements.length ? (
               <View style={{ gap: SPACING.sm }}>
                 {activeAnnouncements.map(renderAnnouncement)}
               </View>
@@ -416,10 +466,10 @@ const GroupFeedScreen = () => {
         }
         renderItem={({ item, index }) => (
           <>
-            {index === firstBorrowedIndex && firstBorrowedIndex !== -1 ? (
+            {index === firstClosedIndex && firstClosedIndex !== -1 ? (
               <View style={[styles.sectionDivider, { borderBottomColor: theme.colors.outlineVariant ?? theme.colors.outline }]}>
                 <Text style={[styles.sectionLabel, { color: '#6B7280' }]}>
-                  Borrowed
+                  {activeTab === 'daha' ? 'Borrowed' : 'Claimed'}
                 </Text>
               </View>
             ) : null}
@@ -433,19 +483,23 @@ const GroupFeedScreen = () => {
         ListEmptyComponent={
           <View style={styles.emptyContent}>
             <Text variant="titleMedium" style={{ color: theme.colors.outline }}>
-              No requests yet
+              {activeTab === 'daha' ? 'No requests yet' : 'No donations yet'}
             </Text>
             <Text variant="bodyMedium" style={{ color: theme.colors.outline, marginTop: 4 }}>
-              Be the first to ask for something!
+              {activeTab === 'daha'
+                ? 'Be the first to ask for something!'
+                : 'Be the first to share something!'}
             </Text>
           </View>
         }
       />
 
       <FAB
-        icon="plus"
-        onPress={() => navigation.navigate('CreatePost')}
-        label="Request"
+        icon={activeTab === 'daha' ? 'plus' : 'gift-outline'}
+        onPress={() =>
+          navigation.navigate(activeTab === 'daha' ? 'CreatePost' : 'CreateDonation')
+        }
+        label={activeTab === 'daha' ? 'Request' : 'Donate'}
         style={[
           styles.fab,
           { backgroundColor: theme.colors.primary },
@@ -601,6 +655,26 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  tabSwitcher: {
+    flexDirection: 'row',
+    borderRadius: RADIUS.lg,
+    padding: 4,
+    gap: 4,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+    gap: 1,
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  tabSubtext: {
+    fontSize: 11,
   },
   fab: {
     position: 'absolute',
