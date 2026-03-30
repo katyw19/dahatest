@@ -344,7 +344,7 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
           {isDawa && post.condition ? (
             <View style={[styles.tag, { backgroundColor: theme.colors.secondary }]}>
               <Text style={[styles.tagLabel, { color: theme.colors.onSecondary }]}>
-                {post.condition === 'like_new' ? 'Like New' : post.condition.charAt(0).toUpperCase() + post.condition.slice(1)} condition
+                {{ new: 'New', gently_used: 'Gently Used', visibly_used: 'Visibly Used' }[post.condition] ?? post.condition} condition
               </Text>
             </View>
           ) : null}

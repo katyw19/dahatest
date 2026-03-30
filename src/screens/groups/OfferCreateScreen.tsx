@@ -18,7 +18,7 @@ type Props = NativeStackScreenProps<GroupStackParamList, 'OfferCreate'>;
 
 const schema = z.object({
   itemDescription: z.string().min(1, 'Description is required'),
-  condition: z.enum(['new', 'like_new', 'used']),
+  condition: z.enum(['new', 'gently_used', 'visibly_used']),
   notes: z.string().optional(),
 });
 
@@ -49,7 +49,7 @@ const OfferCreateScreen = ({ route, navigation }: Props) => {
     resolver: zodResolver(schema),
     defaultValues: {
       itemDescription: '',
-      condition: 'like_new',
+      condition: 'gently_used',
       notes: '',
     },
   });
@@ -173,7 +173,7 @@ const OfferCreateScreen = ({ route, navigation }: Props) => {
       <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
         <Text style={styles.fieldLabel}>Condition</Text>
         <View style={styles.conditionRow}>
-          {(['new', 'like_new', 'used'] as const).map((opt) => {
+          {(['new', 'gently_used', 'visibly_used'] as const).map((opt) => {
             const selected = opt === conditionVal;
             return (
               <Pressable
@@ -193,7 +193,7 @@ const OfferCreateScreen = ({ route, navigation }: Props) => {
                     { color: selected ? '#fff' : '#1C1C1E' },
                   ]}
                 >
-                  {opt === 'like_new' ? 'Like New' : opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  {{ new: 'New', gently_used: 'Gently Used', visibly_used: 'Visibly Used' }[opt]}
                 </Text>
               </Pressable>
             );
