@@ -22,6 +22,7 @@ type Props = NativeStackScreenProps<GroupStackParamList, 'OffersList'>;
 const conditionLabel = (c?: string) => {
   switch (c) {
     case 'new': return 'New';
+    case 'like_new': return 'Like New';
     case 'good': return 'Good';
     case 'used': return 'Used';
     default: return c ?? '';
