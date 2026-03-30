@@ -379,6 +379,42 @@ const GroupFeedScreen = () => {
 
   return (
     <Screen noTopPadding>
+      {/* Fixed tab switcher - always visible */}
+      <View style={[styles.tabBar, { borderBottomColor: `${theme.colors.outline}30` }]}>
+        <Pressable
+          onPress={() => setActiveTab('daha')}
+          style={[
+            styles.tabItem,
+            activeTab === 'daha' && [styles.tabItemActive, { borderBottomColor: theme.colors.primary }],
+          ]}
+        >
+          <Text
+            style={[
+              styles.tabLabel,
+              { color: activeTab === 'daha' ? theme.colors.primary : '#8E8E93' },
+            ]}
+          >
+            DAHA
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setActiveTab('dawa')}
+          style={[
+            styles.tabItem,
+            activeTab === 'dawa' && [styles.tabItemActive, { borderBottomColor: theme.colors.primary }],
+          ]}
+        >
+          <Text
+            style={[
+              styles.tabLabel,
+              { color: activeTab === 'dawa' ? theme.colors.primary : '#8E8E93' },
+            ]}
+          >
+            DAWA
+          </Text>
+        </Pressable>
+      </View>
+
       {error ? (
         <Text style={[styles.error, { padding: 12 }]} variant="bodySmall">
           {error}
@@ -390,58 +426,6 @@ const GroupFeedScreen = () => {
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <View style={styles.listHeader}>
-            {/* DAHA / DAWA tab switcher */}
-            <View style={[styles.tabSwitcher, { backgroundColor: theme.colors.surface }]}>
-              <Pressable
-                onPress={() => setActiveTab('daha')}
-                style={[
-                  styles.tabButton,
-                  activeTab === 'daha' && { backgroundColor: theme.colors.primary },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    { color: activeTab === 'daha' ? '#fff' : '#8E8E93' },
-                  ]}
-                >
-                  DAHA
-                </Text>
-                <Text
-                  style={[
-                    styles.tabSubtext,
-                    { color: activeTab === 'daha' ? 'rgba(255,255,255,0.7)' : '#C7C7CC' },
-                  ]}
-                >
-                  Does anyone have a...
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setActiveTab('dawa')}
-                style={[
-                  styles.tabButton,
-                  activeTab === 'dawa' && { backgroundColor: theme.colors.primary },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    { color: activeTab === 'dawa' ? '#fff' : '#8E8E93' },
-                  ]}
-                >
-                  DAWA
-                </Text>
-                <Text
-                  style={[
-                    styles.tabSubtext,
-                    { color: activeTab === 'dawa' ? 'rgba(255,255,255,0.7)' : '#C7C7CC' },
-                  ]}
-                >
-                  Does anyone want a...
-                </Text>
-              </Pressable>
-            </View>
-
             <TextInput
               placeholder={activeTab === 'daha' ? 'Search requests…' : 'Search donations…'}
               mode="outlined"
@@ -656,25 +640,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabSwitcher: {
+  tabBar: {
     flexDirection: 'row',
-    borderRadius: RADIUS.lg,
-    padding: 4,
-    gap: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  tabButton: {
+  tabItem: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 10,
-    borderRadius: RADIUS.md,
-    gap: 1,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
-  tabText: {
-    fontSize: 15,
+  tabItemActive: {
+    borderBottomWidth: 2,
+  },
+  tabLabel: {
+    fontSize: 14,
     fontWeight: '700',
-  },
-  tabSubtext: {
-    fontSize: 11,
+    letterSpacing: 0.5,
   },
   fab: {
     position: 'absolute',
