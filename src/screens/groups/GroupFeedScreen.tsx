@@ -460,16 +460,18 @@ const GroupFeedScreen = () => {
             {renderPostCard(item)}
           </>
         )}
-        contentContainerStyle={[
-          styles.list,
-          sortedPosts.length === 0 && styles.emptyContainer,
-        ]}
+        contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.emptyContent}>
-            <Text variant="titleMedium" style={{ color: theme.colors.outline }}>
+            <MaterialCommunityIcons
+              name={activeTab === 'daha' ? 'package-variant-closed' : 'gift-outline'}
+              size={40}
+              color="#C7C7CC"
+            />
+            <Text variant="titleMedium" style={{ color: '#8E8E93' }}>
               {activeTab === 'daha' ? 'No requests yet' : 'No donations yet'}
             </Text>
-            <Text variant="bodyMedium" style={{ color: theme.colors.outline, marginTop: 4 }}>
+            <Text variant="bodyMedium" style={{ color: '#C7C7CC', textAlign: 'center' }}>
               {activeTab === 'daha'
                 ? 'Be the first to ask for something!'
                 : 'Be the first to share something!'}
@@ -667,14 +669,10 @@ const styles = StyleSheet.create({
   error: {
     color: '#b91c1c',
   },
-  emptyContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   emptyContent: {
     alignItems: 'center',
-    paddingTop: 60,
+    paddingVertical: 60,
+    gap: 8,
   },
 });
 

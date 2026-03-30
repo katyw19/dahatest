@@ -1,5 +1,5 @@
 export type OfferStatus = 'pending' | 'accepted' | 'rejected';
-export type OfferCondition = 'new' | 'good' | 'used';
+export type OfferCondition = 'new' | 'like_new' | 'used';
 
 export type Offer = {
   id: string;

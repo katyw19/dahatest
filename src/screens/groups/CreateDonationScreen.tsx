@@ -21,7 +21,7 @@ type Props = NativeStackScreenProps<GroupStackParamList, 'CreateDonation'>;
 const schema = z.object({
   text: z.string().min(1, 'Description is required'),
   audienceTag: z.string().min(1, 'Select who can request this'),
-  condition: z.enum(['new', 'good', 'used']),
+  condition: z.enum(['new', 'like_new', 'used']),
   category: z.string().optional(),
   size: z.string().optional(),
 });
@@ -49,7 +49,7 @@ const CreateDonationScreen = ({ navigation }: Props) => {
     defaultValues: {
       text: '',
       audienceTag: '',
-      condition: 'good',
+      condition: 'like_new',
       category: '',
       size: '',
     },
@@ -192,7 +192,7 @@ const CreateDonationScreen = ({ navigation }: Props) => {
       <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
         <Text style={styles.fieldLabel}>Condition</Text>
         <View style={styles.conditionRow}>
-          {(['new', 'good', 'used'] as const).map((opt) => {
+          {(['new', 'like_new', 'used'] as const).map((opt) => {
             const selected = opt === conditionVal;
             return (
               <Pressable
@@ -212,7 +212,7 @@ const CreateDonationScreen = ({ navigation }: Props) => {
                     { color: selected ? '#fff' : '#1C1C1E' },
                   ]}
                 >
-                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  {opt === 'like_new' ? 'Like New' : opt.charAt(0).toUpperCase() + opt.slice(1)}
                 </Text>
               </Pressable>
             );
