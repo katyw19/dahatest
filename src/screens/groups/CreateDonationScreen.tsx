@@ -106,7 +106,12 @@ const CreateDonationScreen = ({ navigation }: Props) => {
       });
       setShowSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create donation.');
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('storage/unauthorized') || msg.includes('permission')) {
+        setError('Unable to upload photo. Try posting without a photo, or contact your admin.');
+      } else {
+        setError(msg || 'Failed to create donation.');
+      }
     }
   };
 
