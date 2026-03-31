@@ -182,7 +182,7 @@ const ProfileTabScreen = ({ navigation }: Props) => {
               { backgroundColor: theme.colors.primary, opacity: pressed ? 0.85 : 1 },
             ]}
           >
-            <MaterialCommunityIcons name="pencil-outline" size={16} color="#fff" />
+            <MaterialCommunityIcons name="pencil-outline" size={14} color="#fff" />
             <Text style={styles.actionBtnText}>Edit Profile</Text>
           </Pressable>
           <Pressable
@@ -192,7 +192,7 @@ const ProfileTabScreen = ({ navigation }: Props) => {
               { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.outline, opacity: pressed ? 0.85 : 1 },
             ]}
           >
-            <MaterialCommunityIcons name="cog-outline" size={16} color={'#1C1C1E'} />
+            <MaterialCommunityIcons name="cog-outline" size={14} color={'#1C1C1E'} />
             <Text style={[styles.actionBtnText, { color: '#1C1C1E' }]}>Settings</Text>
           </Pressable>
         </View>
@@ -209,7 +209,7 @@ const ProfileTabScreen = ({ navigation }: Props) => {
             style={({ pressed }) => [styles.linkRow, pressed && { backgroundColor: `${theme.colors.primary}08` }]}
           >
             <View style={[styles.linkIcon, { backgroundColor: '#FFD60A20' }]}>
-              <MaterialCommunityIcons name="trophy-outline" size={18} color="#FFD60A" />
+              <MaterialCommunityIcons name="trophy-outline" size={16} color="#FFD60A" />
             </View>
             <Text style={[styles.linkText, { color: '#1C1C1E' }]}>Badges</Text>
             <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
@@ -222,7 +222,7 @@ const ProfileTabScreen = ({ navigation }: Props) => {
             style={({ pressed }) => [styles.linkRow, pressed && { backgroundColor: `${theme.colors.primary}08` }]}
           >
             <View style={[styles.linkIcon, { backgroundColor: `${theme.colors.primary}20` }]}>
-              <MaterialCommunityIcons name="palette-outline" size={18} color={theme.colors.primary} />
+              <MaterialCommunityIcons name="palette-outline" size={16} color={theme.colors.primary} />
             </View>
             <Text style={[styles.linkText, { color: '#1C1C1E' }]}>Theme</Text>
             <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
@@ -246,43 +246,43 @@ const ProfileTabScreen = ({ navigation }: Props) => {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scroll: { paddingBottom: 40, gap: SPACING.sm },
+  scroll: { paddingBottom: 40, gap: 8 },
 
   /* Header card */
   headerCard: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 18,
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.lg,
     marginHorizontal: SPACING.sm,
-    marginTop: 16,
-    gap: 6,
+    marginTop: 12,
+    gap: 4,
   },
   avatarWrap: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    marginBottom: 8,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    marginBottom: 6,
   },
   avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
   },
   avatarPlaceholder: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
   initialsText: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: '700',
   },
   avatarOverlay: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 45,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -291,20 +291,20 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#fff',
   },
   fullName: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
   },
   username: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#8E8E93',
   },
   metaRow: {
@@ -312,31 +312,32 @@ const styles = StyleSheet.create({
     gap: 6,
     flexWrap: 'wrap',
     justifyContent: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   metaChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 999,
   },
   metaChipText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
   },
   bio: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
     textAlign: 'center',
-    marginTop: 8,
-    paddingHorizontal: 12,
+    marginTop: 4,
+    paddingHorizontal: 8,
+    color: '#3C3C43',
   },
   addBio: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
-    marginTop: 6,
+    marginTop: 4,
   },
 
   /* Stats */
@@ -344,7 +345,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingVertical: 18,
+    paddingVertical: 14,
     borderRadius: RADIUS.lg,
     marginHorizontal: SPACING.sm,
   },
@@ -353,23 +354,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statNumber: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#8E8E93',
-    marginTop: 2,
+    marginTop: 1,
   },
   statDivider: {
     width: 1,
-    height: 32,
+    height: 24,
   },
 
   /* Actions */
   actionsRow: {
     flexDirection: 'row',
-    gap: SPACING.sm,
+    gap: 8,
     marginHorizontal: SPACING.sm,
   },
   actionBtn: {
@@ -377,12 +378,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 12,
+    gap: 5,
+    paddingVertical: 9,
     borderRadius: RADIUS.md,
   },
   actionBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#fff',
   },
@@ -396,36 +397,36 @@ const styles = StyleSheet.create({
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: SPACING.md,
   },
   linkIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   linkText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
   },
   linkDivider: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: 56,
+    marginLeft: 50,
   },
 
   /* Sign out */
   signOutBtn: {
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 12,
     marginHorizontal: SPACING.sm,
   },
   signOutText: {
     color: '#FF3B30',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
   },
 });
