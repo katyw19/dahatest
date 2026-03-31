@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Text, TextInput, useTheme } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput as RNTextInput, View } from 'react-native';
+import { Text, useTheme } from 'react-native-paper';
 import { z } from 'zod';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,7 +8,6 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../../navigation/RootNavigator';
 import { useAuth } from '../../context/AuthContext';
-import { SPACING, RADIUS } from '../../theme/spacing';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -59,7 +57,7 @@ const SignInScreen = () => {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
@@ -67,93 +65,68 @@ const SignInScreen = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Logo / welcome area */}
-        <View style={styles.heroSection}>
-          <View style={[styles.logoCircle, { backgroundColor: `${theme.colors.primary}15` }]}>
-            <MaterialCommunityIcons name="hand-heart" size={36} color={theme.colors.primary} />
-          </View>
-          <Text style={[styles.welcomeTitle, { color: '#1C1C1E' }]}>Welcome back</Text>
-          <Text style={styles.welcomeSub}>Sign in to your account</Text>
-        </View>
+        {/* Title */}
+        <Text style={styles.title}>DAHA</Text>
 
         {/* Error */}
-        {error ? (
-          <View style={styles.errorBox}>
-            <MaterialCommunityIcons name="alert-circle-outline" size={16} color="#DC2626" />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {/* Form card */}
-        <View style={[styles.formCard, { backgroundColor: theme.colors.surface }]}>
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Email</Text>
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  mode="outlined"
-                  placeholder="you@example.com"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                  onBlur={onBlur}
-                  value={value}
-                  onChangeText={onChange}
-                  error={!!errors.email}
-                  outlineColor={`${theme.colors.outline}40`}
-                  activeOutlineColor={theme.colors.primary}
-                  style={styles.input}
-                  left={<TextInput.Icon icon="email-outline" size={18} />}
-                />
-              )}
-            />
-            {errors.email?.message ? (
-              <Text style={styles.fieldError}>{errors.email.message}</Text>
-            ) : null}
-          </View>
+        {/* Fields */}
+        <View style={styles.fields}>
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <RNTextInput
+                placeholder="Email"
+                placeholderTextColor="#A0A0A0"
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                onBlur={onBlur}
+                value={value}
+                onChangeText={onChange}
+                style={[
+                  styles.input,
+                  { borderColor: errors.email ? '#DC2626' : '#DBDBDB' },
+                ]}
+              />
+            )}
+          />
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Password</Text>
+          <View>
             <Controller
               control={control}
               name="password"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  mode="outlined"
-                  placeholder="Enter your password"
-                  secureTextEntry={!showPassword}
-                  onBlur={onBlur}
-                  value={value}
-                  onChangeText={onChange}
-                  error={!!errors.password}
-                  outlineColor={`${theme.colors.outline}40`}
-                  activeOutlineColor={theme.colors.primary}
-                  style={styles.input}
-                  left={<TextInput.Icon icon="lock-outline" size={18} />}
-                  right={
-                    <TextInput.Icon
-                      icon={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                      size={18}
-                      onPress={() => setShowPassword(!showPassword)}
-                    />
-                  }
-                />
+                <View style={[styles.passwordWrap, { borderColor: errors.password ? '#DC2626' : '#DBDBDB' }]}>
+                  <RNTextInput
+                    placeholder="Password"
+                    placeholderTextColor="#A0A0A0"
+                    secureTextEntry={!showPassword}
+                    onBlur={onBlur}
+                    value={value}
+                    onChangeText={onChange}
+                    style={styles.passwordInput}
+                  />
+                  <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
+                    <Text style={[styles.showBtn, { color: theme.colors.primary }]}>
+                      {showPassword ? 'hide' : 'show'}
+                    </Text>
+                  </Pressable>
+                </View>
               )}
             />
-            {errors.password?.message ? (
-              <Text style={styles.fieldError}>{errors.password.message}</Text>
-            ) : null}
           </View>
-
-          <Pressable
-            onPress={() => navigation.navigate('ForgotPassword')}
-            style={styles.forgotRow}
-          >
-            <Text style={[styles.forgotText, { color: theme.colors.primary }]}>Forgot password?</Text>
-          </Pressable>
         </View>
+
+        {/* Forgot */}
+        <Pressable
+          onPress={() => navigation.navigate('ForgotPassword')}
+          style={styles.forgotRow}
+        >
+          <Text style={[styles.forgotText, { color: theme.colors.primary }]}>Forgot password?</Text>
+        </Pressable>
 
         {/* Sign in button */}
         <Pressable
@@ -171,89 +144,91 @@ const SignInScreen = () => {
           ]}
         >
           <Text style={styles.primaryBtnText}>
-            {isSubmitting ? 'Signing in...' : 'Sign In'}
+            {isSubmitting ? 'Signing in...' : 'Sign in'}
           </Text>
         </Pressable>
 
-        {/* Sign up link */}
-        <View style={styles.bottomRow}>
-          <Text style={styles.bottomText}>Don't have an account?</Text>
-          <Pressable onPress={() => navigation.navigate('SignUp')}>
-            <Text style={[styles.bottomLink, { color: theme.colors.primary }]}>Sign Up</Text>
-          </Pressable>
+        {/* Divider */}
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
         </View>
+
+        {/* Create account */}
+        <Pressable
+          onPress={() => navigation.navigate('SignUp')}
+          style={({ pressed }) => [
+            styles.secondaryBtn,
+            { borderColor: theme.colors.primary, opacity: pressed ? 0.7 : 1 },
+          ]}
+        >
+          <Text style={[styles.secondaryBtnText, { color: theme.colors.primary }]}>
+            Create new account
+          </Text>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   scroll: {
     flexGrow: 1,
-    padding: SPACING.xl,
-    paddingTop: 60,
-    gap: SPACING.md,
+    paddingHorizontal: 32,
+    paddingTop: 100,
+    gap: 14,
   },
 
-  heroSection: {
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
-  },
-  logoCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  welcomeTitle: {
-    fontSize: 26,
+  title: {
+    fontSize: 40,
     fontWeight: '700',
-  },
-  welcomeSub: {
-    fontSize: 15,
-    color: '#8E8E93',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#1C1C1E',
+    letterSpacing: -0.5,
   },
 
-  errorBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FEF2F2',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: RADIUS.md,
-  },
-  errorText: {
+  error: {
     color: '#DC2626',
     fontSize: 13,
-    flex: 1,
+    textAlign: 'center',
   },
 
-  formCard: {
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    gap: SPACING.md,
-  },
-  fieldGroup: {
-    gap: 6,
-  },
-  fieldLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#8E8E93',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
+  fields: {
+    gap: 10,
   },
   input: {
-    backgroundColor: 'transparent',
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
     fontSize: 15,
+    color: '#1C1C1E',
+    backgroundColor: '#FAFAFA',
   },
-  fieldError: {
-    color: '#DC2626',
-    fontSize: 12,
+  passwordWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    backgroundColor: '#FAFAFA',
+    paddingRight: 14,
+  },
+  passwordInput: {
+    flex: 1,
+    height: 48,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: '#1C1C1E',
+  },
+  showBtn: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 
   forgotRow: {
@@ -265,28 +240,44 @@ const styles = StyleSheet.create({
   },
 
   primaryBtn: {
-    paddingVertical: 16,
-    borderRadius: RADIUS.lg,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
   },
   primaryBtnText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
   },
 
-  bottomRow: {
+  dividerRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 4,
-    marginTop: 8,
+    alignItems: 'center',
+    gap: 14,
+    marginVertical: 4,
   },
-  bottomText: {
-    fontSize: 14,
+  dividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#DBDBDB',
+  },
+  dividerText: {
+    fontSize: 13,
     color: '#8E8E93',
+    fontWeight: '500',
   },
-  bottomLink: {
-    fontSize: 14,
+
+  secondaryBtn: {
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryBtnText: {
+    fontSize: 15,
     fontWeight: '700',
   },
 });
