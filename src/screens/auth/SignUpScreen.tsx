@@ -1,36 +1,39 @@
-import { useState } from "react";
-import { StyleSheet, View } from "react-native";
-import { Button, Text, TextInput } from "react-native-paper";
-import { z } from "zod";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { AuthStackParamList } from "../../navigation/RootNavigator";
-import { useAuth } from "../../context/AuthContext";
+import { useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput, useTheme } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { z } from 'zod';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AuthStackParamList } from '../../navigation/RootNavigator';
+import { useAuth } from '../../context/AuthContext';
+import { SPACING, RADIUS } from '../../theme/spacing';
+
+const MIN_PASSWORD_LEN = 8;
 
 const schema = z
   .object({
-    email: z.string().email("Enter a valid email"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string().min(8, "Password must be at least 8 characters"),
+    email: z.string().email('Enter a valid email'),
+    password: z.string().min(MIN_PASSWORD_LEN, `Password must be at least ${MIN_PASSWORD_LEN} characters`),
+    confirmPassword: z.string().min(MIN_PASSWORD_LEN, `Password must be at least ${MIN_PASSWORD_LEN} characters`),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "Passwords must match",
+    path: ['confirmPassword'],
+    message: 'Passwords must match',
   });
 
 type FormValues = z.infer<typeof schema>;
 
-const MIN_PASSWORD_LEN = 8;
-
 const SignUpScreen = () => {
+  const theme = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const { signUp } = useAuth();
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     control,
@@ -39,21 +42,18 @@ const SignUpScreen = () => {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "", confirmPassword: "" },
-    mode: "onChange",
+    defaultValues: { email: '', password: '', confirmPassword: '' },
+    mode: 'onChange',
   });
 
-  // Live values for inline requirements UI
-  const passwordValue = watch("password") ?? "";
-  const confirmValue = watch("confirmPassword") ?? "";
+  const passwordValue = watch('password') ?? '';
+  const confirmValue = watch('confirmPassword') ?? '';
   const passwordOk = passwordValue.length >= MIN_PASSWORD_LEN;
-  const confirmOk = confirmValue.length >= MIN_PASSWORD_LEN;
   const matchOk = passwordValue.length > 0 && passwordValue === confirmValue;
 
   const onSubmit = async (values: FormValues) => {
     setError(null);
     setLoading(true);
-
     try {
       await signUp(values.email.trim(), values.password);
     } catch (err: any) {
@@ -74,170 +74,278 @@ const SignUpScreen = () => {
     }
   };
 
-  const requirementStyle = (ok: boolean) => [
-    styles.requirement,
-    ok ? styles.requirementOk : styles.requirementMuted,
-  ];
-
   return (
-    <View style={styles.container}>
-      <Text variant="headlineSmall" style={styles.title}>
-        Create account
-      </Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Hero */}
+        <View style={styles.heroSection}>
+          <View style={[styles.logoCircle, { backgroundColor: `${theme.colors.primary}15` }]}>
+            <MaterialCommunityIcons name="account-plus" size={36} color={theme.colors.primary} />
+          </View>
+          <Text style={[styles.welcomeTitle, { color: '#1C1C1E' }]}>Create account</Text>
+          <Text style={styles.welcomeSub}>Join the community</Text>
+        </View>
 
-      <Text variant="bodySmall" style={styles.subtle}>
-        Requirements:
-        {"\n"}• Use a valid email address
-        {"\n"}• Password must be at least {MIN_PASSWORD_LEN} characters
-        {"\n"}• Passwords must match
-      </Text>
-
-      {error ? (
-        <Text variant="bodySmall" style={styles.error}>
-          {error}
-        </Text>
-      ) : null}
-
-      <View style={styles.form}>
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              label="Email"
-              mode="outlined"
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              onBlur={onBlur}
-              value={value}
-              onChangeText={onChange}
-              error={!!errors.email}
-            />
-          )}
-        />
-        {errors.email?.message ? (
-          <Text variant="bodySmall" style={styles.error}>
-            {errors.email.message}
-          </Text>
+        {/* Error */}
+        {error ? (
+          <View style={styles.errorBox}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={16} color="#DC2626" />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
         ) : null}
 
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              label="Password"
-              mode="outlined"
-              secureTextEntry
-              onBlur={onBlur}
-              value={value}
-              onChangeText={onChange}
-              error={!!errors.password}
-              right={
-                <TextInput.Affix
-                  text={`${Math.min(value.length, MIN_PASSWORD_LEN)}/${MIN_PASSWORD_LEN}`}
+        {/* Form card */}
+        <View style={[styles.formCard, { backgroundColor: theme.colors.surface }]}>
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Email</Text>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  mode="outlined"
+                  placeholder="you@example.com"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  onBlur={onBlur}
+                  value={value}
+                  onChangeText={onChange}
+                  error={!!errors.email}
+                  outlineColor={`${theme.colors.outline}40`}
+                  activeOutlineColor={theme.colors.primary}
+                  style={styles.input}
+                  left={<TextInput.Icon icon="email-outline" size={18} />}
                 />
-              }
+              )}
             />
-          )}
-        />
-        {/* Always show requirement helper (not only errors) */}
-        <Text variant="bodySmall" style={requirementStyle(passwordOk)}>
-          • At least {MIN_PASSWORD_LEN} characters
-        </Text>
-        {errors.password?.message ? (
-          <Text variant="bodySmall" style={styles.error}>
-            {errors.password.message}
-          </Text>
-        ) : null}
+            {errors.email?.message ? (
+              <Text style={styles.fieldError}>{errors.email.message}</Text>
+            ) : null}
+          </View>
 
-        <Controller
-          control={control}
-          name="confirmPassword"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              label="Confirm password"
-              mode="outlined"
-              secureTextEntry
-              onBlur={onBlur}
-              value={value}
-              onChangeText={onChange}
-              error={!!errors.confirmPassword}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Password</Text>
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  mode="outlined"
+                  placeholder="At least 8 characters"
+                  secureTextEntry={!showPassword}
+                  onBlur={onBlur}
+                  value={value}
+                  onChangeText={onChange}
+                  error={!!errors.password}
+                  outlineColor={`${theme.colors.outline}40`}
+                  activeOutlineColor={theme.colors.primary}
+                  style={styles.input}
+                  left={<TextInput.Icon icon="lock-outline" size={18} />}
+                  right={
+                    <TextInput.Icon
+                      icon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={18}
+                      onPress={() => setShowPassword(!showPassword)}
+                    />
+                  }
+                />
+              )}
             />
-          )}
-        />
-        <Text variant="bodySmall" style={requirementStyle(confirmOk)}>
-          • Confirm password is at least {MIN_PASSWORD_LEN} characters
-        </Text>
-        <Text variant="bodySmall" style={requirementStyle(matchOk)}>
-          • Passwords match
-        </Text>
-        {errors.confirmPassword?.message ? (
-          <Text variant="bodySmall" style={styles.error}>
-            {errors.confirmPassword.message}
-          </Text>
-        ) : null}
+            <View style={styles.reqRow}>
+              <MaterialCommunityIcons
+                name={passwordOk ? 'check-circle' : 'circle-outline'}
+                size={14}
+                color={passwordOk ? '#34C759' : '#C7C7CC'}
+              />
+              <Text style={[styles.reqText, { color: passwordOk ? '#34C759' : '#8E8E93' }]}>
+                At least {MIN_PASSWORD_LEN} characters
+              </Text>
+            </View>
+          </View>
 
-        {/* Keep your debug-style submit wrapper (works + shows why it fails) */}
-        <Button
-          mode="contained"
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Confirm Password</Text>
+            <Controller
+              control={control}
+              name="confirmPassword"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  mode="outlined"
+                  placeholder="Re-enter your password"
+                  secureTextEntry={!showPassword}
+                  onBlur={onBlur}
+                  value={value}
+                  onChangeText={onChange}
+                  error={!!errors.confirmPassword}
+                  outlineColor={`${theme.colors.outline}40`}
+                  activeOutlineColor={theme.colors.primary}
+                  style={styles.input}
+                  left={<TextInput.Icon icon="lock-check-outline" size={18} />}
+                />
+              )}
+            />
+            <View style={styles.reqRow}>
+              <MaterialCommunityIcons
+                name={matchOk ? 'check-circle' : 'circle-outline'}
+                size={14}
+                color={matchOk ? '#34C759' : '#C7C7CC'}
+              />
+              <Text style={[styles.reqText, { color: matchOk ? '#34C759' : '#8E8E93' }]}>
+                Passwords match
+              </Text>
+            </View>
+            {errors.confirmPassword?.message ? (
+              <Text style={styles.fieldError}>{errors.confirmPassword.message}</Text>
+            ) : null}
+          </View>
+        </View>
+
+        {/* Submit */}
+        <Pressable
           onPress={() => {
-            handleSubmit(
-              async (values) => {
-                await onSubmit(values);
-              },
-              () => {
-                setError("Please fix the highlighted fields.");
-              }
-            )();
+            handleSubmit(onSubmit, () => setError('Please fix the highlighted fields.'))();
           }}
           disabled={loading}
-          loading={loading}
+          style={({ pressed }) => [
+            styles.primaryBtn,
+            {
+              backgroundColor: loading
+                ? `${theme.colors.primary}80`
+                : pressed
+                  ? `${theme.colors.primary}DD`
+                  : theme.colors.primary,
+            },
+          ]}
         >
-          Create Account
-        </Button>
+          <Text style={styles.primaryBtnText}>
+            {loading ? 'Creating account...' : 'Create Account'}
+          </Text>
+        </Pressable>
 
-        <Button
-          mode="text"
-          disabled={loading}
-          onPress={() => navigation.navigate("SignIn")}
-        >
-          Already have an account? Sign in
-        </Button>
-      </View>
-    </View>
+        {/* Sign in link */}
+        <View style={styles.bottomRow}>
+          <Text style={styles.bottomText}>Already have an account?</Text>
+          <Pressable onPress={() => navigation.navigate('SignIn')}>
+            <Text style={[styles.bottomLink, { color: theme.colors.primary }]}>Sign In</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  scroll: {
+    flexGrow: 1,
+    padding: SPACING.xl,
+    paddingTop: 40,
+    gap: SPACING.md,
+  },
+
+  heroSection: {
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  logoCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  welcomeTitle: {
+    fontSize: 26,
+    fontWeight: '700',
+  },
+  welcomeSub: {
+    fontSize: 15,
+    color: '#8E8E93',
+  },
+
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 13,
     flex: 1,
-    padding: 24,
-    gap: 16,
   },
-  title: {
-    fontWeight: "700",
+
+  formCard: {
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    gap: SPACING.md,
   },
-  subtle: {
-    color: "#6b7280",
-    lineHeight: 18,
+  fieldGroup: {
+    gap: 6,
   },
-  form: {
-    gap: 12,
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#8E8E93',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
-  error: {
-    color: "#b91c1c",
+  input: {
+    backgroundColor: 'transparent',
+    fontSize: 15,
   },
-  requirement: {
-    marginTop: -6,
-    lineHeight: 16,
+  fieldError: {
+    color: '#DC2626',
+    fontSize: 12,
   },
-  requirementMuted: {
-    color: "#6b7280",
+
+  reqRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
   },
-  requirementOk: {
-    color: "#15803d",
+  reqText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  primaryBtn: {
+    paddingVertical: 16,
+    borderRadius: RADIUS.lg,
+    alignItems: 'center',
+  },
+  primaryBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 4,
+    marginTop: 8,
+  },
+  bottomText: {
+    fontSize: 14,
+    color: '#8E8E93',
+  },
+  bottomLink: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
 
