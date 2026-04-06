@@ -111,7 +111,7 @@ const SettingsScreen = ({ navigation }: Props) => {
   );
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
         {renderSection('Account', accountItems)}
         {renderSection('Support', supportItems)}
@@ -124,6 +124,7 @@ const SettingsScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: {
     paddingBottom: SPACING.xl,
+    paddingTop: SPACING.sm,
   },
   section: {
     marginBottom: SPACING.md,
