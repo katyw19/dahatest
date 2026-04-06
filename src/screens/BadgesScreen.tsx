@@ -137,7 +137,7 @@ const BadgesScreen = () => {
   const isCelebrating = !!unlockId;
 
   return (
-    <Screen noTopPadding>
+    <Screen>
       {/* Progress header */}
       <View style={[styles.progressCard, { backgroundColor: theme.colors.surface }]}>
         <View style={styles.progressTextRow}>
