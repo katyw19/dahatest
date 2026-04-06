@@ -46,7 +46,7 @@ const AdminToolsScreen = ({ navigation }: Props) => {
   ];
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <View style={styles.list}>
         {items.map((item) => (
           <Pressable

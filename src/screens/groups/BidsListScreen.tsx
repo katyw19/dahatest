@@ -88,7 +88,7 @@ const BidsListScreen = ({ route, navigation }: Props) => {
 
   if (!isAuthor) {
     return (
-      <Screen>
+      <Screen noTopPadding>
         <View style={styles.center}>
           <Text style={{ color: '#8E8E93' }}>Donors only</Text>
         </View>

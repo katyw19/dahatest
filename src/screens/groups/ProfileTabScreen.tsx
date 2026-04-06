@@ -18,7 +18,7 @@ type Props = NativeStackScreenProps<GroupStackParamList, 'Profile'>;
 
 const ProfileTabScreen = ({ navigation }: Props) => {
   const theme = useTheme();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { currentGroup, currentMembership } = useGroupContext();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -168,16 +168,6 @@ const ProfileTabScreen = ({ navigation }: Props) => {
           <Text style={styles.editBtnText}>Edit profile</Text>
         </Pressable>
 
-        {/* ─── Divider ─── */}
-        <View style={[styles.divider, { backgroundColor: '#EBEBEB' }]} />
-
-        {/* ─── Sign Out ─── */}
-        <Pressable
-          onPress={signOut}
-          style={({ pressed }) => [styles.signOutRow, pressed && { opacity: 0.6 }]}
-        >
-          <Text style={styles.signOutText}>Sign out</Text>
-        </Pressable>
       </ScrollView>
     </Screen>
   );
@@ -292,22 +282,6 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
   },
 
-  /* Divider */
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    marginTop: 16,
-    marginBottom: 4,
-  },
-
-  /* Sign out */
-  signOutRow: {
-    paddingVertical: 12,
-  },
-  signOutText: {
-    fontSize: 14,
-    color: '#FF3B30',
-    fontWeight: '500',
-  },
 });
 
 export default ProfileTabScreen;

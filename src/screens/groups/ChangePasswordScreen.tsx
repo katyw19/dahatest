@@ -67,7 +67,7 @@ const ChangePasswordScreen = () => {
   };
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <View style={styles.form}>
         <Text style={[styles.label, { color: '#1C1C1E' }]}>Current Password</Text>
         <View style={[styles.inputWrap, { borderColor: theme.colors.outline, backgroundColor: theme.colors.surface }]}>

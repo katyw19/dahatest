@@ -259,7 +259,7 @@ const ChatsListScreen = ({ navigation }: Props) => {
   const activeEmpty = !active.length;
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <FlatList
         data={[]}
         renderItem={null}
