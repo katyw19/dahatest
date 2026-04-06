@@ -157,59 +157,26 @@ const ProfileTabScreen = ({ navigation }: Props) => {
           )}
         </View>
 
-        {/* ─── Action Buttons ─── */}
-        <View style={styles.actionsRow}>
-          <Pressable
-            onPress={() => navigation.navigate('EditProfile')}
-            style={({ pressed }) => [
-              styles.actionBtn,
-              { backgroundColor: theme.colors.surface, borderColor: '#DBDBDB', opacity: pressed ? 0.7 : 1 },
-            ]}
-          >
-            <Text style={styles.actionBtnText}>Edit Profile</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => navigation.navigate('Settings')}
-            style={({ pressed }) => [
-              styles.actionBtn,
-              { backgroundColor: theme.colors.surface, borderColor: '#DBDBDB', opacity: pressed ? 0.7 : 1 },
-            ]}
-          >
-            <Text style={styles.actionBtnText}>Settings</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              const tab = navigation.getParent?.();
-              if (tab) tab.navigate('BadgesTab' as never);
-            }}
-            style={({ pressed }) => [
-              styles.actionBtn,
-              { backgroundColor: theme.colors.surface, borderColor: '#DBDBDB', opacity: pressed ? 0.7 : 1 },
-            ]}
-          >
-            <Text style={styles.actionBtnText}>Badges</Text>
-          </Pressable>
-        </View>
+        {/* ─── Edit Profile Button ─── */}
+        <Pressable
+          onPress={() => navigation.navigate('EditProfile')}
+          style={({ pressed }) => [
+            styles.editBtn,
+            { backgroundColor: theme.colors.surface, borderColor: '#DBDBDB', opacity: pressed ? 0.7 : 1 },
+          ]}
+        >
+          <Text style={styles.editBtnText}>Edit profile</Text>
+        </Pressable>
 
         {/* ─── Divider ─── */}
         <View style={[styles.divider, { backgroundColor: '#EBEBEB' }]} />
 
-        {/* ─── Quick links ─── */}
-        <Pressable
-          onPress={() => navigation.navigate('ThemePicker')}
-          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.6 }]}
-        >
-          <MaterialCommunityIcons name="palette-outline" size={18} color="#8E8E93" />
-          <Text style={styles.linkText}>Theme</Text>
-          <MaterialCommunityIcons name="chevron-right" size={18} color="#C7C7CC" />
-        </Pressable>
-
+        {/* ─── Sign Out ─── */}
         <Pressable
           onPress={signOut}
-          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.6 }]}
+          style={({ pressed }) => [styles.signOutRow, pressed && { opacity: 0.6 }]}
         >
-          <MaterialCommunityIcons name="logout" size={18} color="#FF3B30" />
-          <Text style={[styles.linkText, { color: '#FF3B30' }]}>Sign Out</Text>
+          <Text style={styles.signOutText}>Sign out</Text>
         </Pressable>
       </ScrollView>
     </Screen>
@@ -278,8 +245,8 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   fullName: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
   },
   username: {
     fontSize: 13,
@@ -311,21 +278,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  /* Actions */
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 14,
-  },
-  actionBtn: {
-    flex: 1,
+  /* Edit button */
+  editBtn: {
     alignItems: 'center',
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
+    marginTop: 14,
   },
-  actionBtnText: {
-    fontSize: 13,
+  editBtnText: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#1C1C1E',
   },
@@ -334,21 +296,17 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 4,
   },
 
-  /* Links */
-  linkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  /* Sign out */
+  signOutRow: {
     paddingVertical: 12,
-    gap: 10,
   },
-  linkText: {
-    flex: 1,
+  signOutText: {
     fontSize: 14,
+    color: '#FF3B30',
     fontWeight: '500',
-    color: '#1C1C1E',
   },
 });
 
