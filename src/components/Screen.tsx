@@ -18,7 +18,7 @@ const Screen = ({ children, noTopPadding }: ScreenProps) => {
         styles.container,
         {
           backgroundColor: theme.colors.background,
-          paddingTop: noTopPadding ? 0 : Math.max(insets.top + 4, SPACING.md),
+          paddingTop: noTopPadding ? 0 : Math.max(insets.top + 8, SPACING.lg),
         },
       ]}
     >
