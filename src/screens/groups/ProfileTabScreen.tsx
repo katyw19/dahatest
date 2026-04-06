@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -8,27 +8,13 @@ import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage
 import { useAuth } from '../../context/AuthContext';
 import { useGroupContext } from './GroupProvider';
 import { getFirebaseDb, getFirebaseStorage } from '../../services/firebase';
-import { listenPostsByAuthor } from '../../services/posts';
 import type { UserProfile } from '../../models/userProfile';
-import type { PostRequest } from '../../models/postRequest';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
 import Screen from '../../components/Screen';
 import { SPACING, RADIUS } from '../../theme/spacing';
 
 type Props = NativeStackScreenProps<GroupStackParamList, 'Profile'>;
-
-const formatRelative = (dateValue: any) => {
-  const date = dateValue?.toDate ? dateValue.toDate() : null;
-  if (!date) return '';
-  const diff = Date.now() - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-};
 
 const ProfileTabScreen = ({ navigation }: Props) => {
   const theme = useTheme();
@@ -38,8 +24,6 @@ const ProfileTabScreen = ({ navigation }: Props) => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [membershipStats, setMembershipStats] = useState<typeof currentMembership | null>(null);
-  const [myPosts, setMyPosts] = useState<PostRequest[]>([]);
-  const [activeTab, setActiveTab] = useState<'requests' | 'donations'>('requests');
 
   useEffect(() => {
     if (!user) return;
@@ -63,17 +47,6 @@ const ProfileTabScreen = ({ navigation }: Props) => {
     });
     return () => unsub();
   }, [currentGroup?.id, user?.uid]);
-
-  useEffect(() => {
-    if (!currentGroup || !user) return;
-    const unsub = listenPostsByAuthor(
-      currentGroup.id,
-      user.uid,
-      setMyPosts,
-      activeTab === 'donations' ? 'dawa' : 'daha'
-    );
-    return () => { if (unsub) unsub(); };
-  }, [currentGroup?.id, user?.uid, activeTab]);
 
   const handlePickAvatar = async () => {
     if (!user) return;
@@ -107,6 +80,9 @@ const ProfileTabScreen = ({ navigation }: Props) => {
   const stats = membershipStats ?? currentMembership;
   const gradeTag = profile?.gradeTag ?? (stats as any)?.gradeTag;
   const role = stats?.role;
+  const lends = stats?.lendsCompleted ?? 0;
+  const borrows = stats?.borrowsCompleted ?? 0;
+  const trust = stats?.trustScore;
 
   const initials = (fullName.split(' ').map((w: string) => w[0]).join('').slice(0, 2) || '?').toUpperCase();
 
@@ -120,272 +96,214 @@ const ProfileTabScreen = ({ navigation }: Props) => {
     );
   }
 
-  const renderPostItem = ({ item }: { item: PostRequest }) => {
-    const isClosed = item.status === 'borrowed' || item.status === 'claimed';
-    return (
-      <Pressable
-        onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
-        style={({ pressed }) => [
-          styles.postItem,
-          { borderBottomColor: '#F0F0F0', opacity: pressed ? 0.7 : 1 },
-        ]}
-      >
-        <View style={styles.postItemLeft}>
-          <Text style={styles.postItemText} numberOfLines={2}>{item.text}</Text>
-          <View style={styles.postItemMeta}>
-            {item.audienceTag ? <Text style={styles.postItemTag}>{item.audienceTag}</Text> : null}
-            {item.audienceTag ? <Text style={styles.postItemDot}>·</Text> : null}
-            <Text style={styles.postItemTime}>{formatRelative((item as any).createdAt)}</Text>
-          </View>
-        </View>
-        <View style={[styles.postItemStatus, { backgroundColor: isClosed ? '#F0F0F0' : `${theme.colors.primary}12` }]}>
-          <Text style={[styles.postItemStatusText, { color: isClosed ? '#8E8E93' : theme.colors.primary }]}>
-            {item.status === 'claimed' ? 'Claimed' : item.status === 'borrowed' ? 'Borrowed' : 'Open'}
-          </Text>
-        </View>
-      </Pressable>
-    );
-  };
+  return (
+    <Screen noTopPadding>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* ─── Avatar centered ─── */}
+        <View style={styles.avatarSection}>
+          <Pressable onPress={handlePickAvatar} style={styles.avatarWrap}>
+            {profile?.photoURL ? (
+              <Image source={{ uri: profile.photoURL }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatarPlaceholder, { backgroundColor: `${theme.colors.primary}12` }]}>
+                <Text style={[styles.initialsText, { color: theme.colors.primary }]}>{initials}</Text>
+              </View>
+            )}
+            {uploading ? (
+              <View style={styles.avatarOverlay}>
+                <ActivityIndicator color="#fff" />
+              </View>
+            ) : null}
+          </Pressable>
 
-  const headerComponent = (
-    <>
-      {/* ─── Top section: avatar + stats ─── */}
-      <View style={styles.topSection}>
-        <Pressable onPress={handlePickAvatar} style={styles.avatarWrap}>
-          {profile?.photoURL ? (
-            <Image source={{ uri: profile.photoURL }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: `${theme.colors.primary}15` }]}>
-              <Text style={[styles.initialsText, { color: theme.colors.primary }]}>{initials}</Text>
-            </View>
-          )}
-          {uploading ? (
-            <View style={styles.avatarOverlay}>
-              <ActivityIndicator color="#fff" />
-            </View>
+          <Text style={styles.fullName}>{fullName}</Text>
+          {displayName && displayName !== fullName ? (
+            <Text style={styles.username}>@{displayName}</Text>
           ) : null}
-        </Pressable>
-
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{stats?.lendsCompleted ?? 0}</Text>
-            <Text style={styles.statLabel}>Lends</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{stats?.borrowsCompleted ?? 0}</Text>
-            <Text style={styles.statLabel}>Borrows</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{stats?.trustScore ?? '—'}</Text>
-            <Text style={styles.statLabel}>Trust</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* ─── Name + meta ─── */}
-      <View style={styles.infoSection}>
-        <Text style={[styles.fullName, { color: '#1C1C1E' }]}>{fullName}</Text>
-        {displayName && displayName !== fullName ? (
-          <Text style={styles.username}>@{displayName}</Text>
-        ) : null}
-
-        <View style={styles.metaRow}>
-          {gradeTag ? <Text style={styles.metaText}>{gradeTag}</Text> : null}
-          {gradeTag && (pronouns || role === 'admin') ? <Text style={styles.metaDot}>·</Text> : null}
-          {pronouns ? <Text style={styles.metaText}>{pronouns}</Text> : null}
-          {pronouns && role === 'admin' ? <Text style={styles.metaDot}>·</Text> : null}
-          {role === 'admin' ? <Text style={[styles.metaText, { color: theme.colors.primary }]}>Admin</Text> : null}
         </View>
 
+        {/* ─── Bio ─── */}
         {bio ? (
           <Text style={styles.bio}>{bio}</Text>
         ) : (
           <Pressable onPress={() => navigation.navigate('EditProfile')}>
-            <Text style={[styles.addBio, { color: theme.colors.primary }]}>Add a bio</Text>
+            <Text style={[styles.addBio, { color: theme.colors.primary }]}>+ Add a bio</Text>
           </Pressable>
         )}
-      </View>
 
-      {/* ─── Edit Profile Button ─── */}
-      <Pressable
-        onPress={() => navigation.navigate('EditProfile')}
-        style={({ pressed }) => [
-          styles.editBtn,
-          { backgroundColor: theme.colors.surface, borderColor: '#DBDBDB', opacity: pressed ? 0.7 : 1 },
-        ]}
-      >
-        <Text style={styles.editBtnText}>Edit profile</Text>
-      </Pressable>
+        {/* ─── Meta chips ─── */}
+        <View style={styles.chipsRow}>
+          {gradeTag ? (
+            <View style={[styles.chip, { backgroundColor: `${theme.colors.primary}10` }]}>
+              <Text style={[styles.chipText, { color: theme.colors.primary }]}>{gradeTag}</Text>
+            </View>
+          ) : null}
+          {pronouns ? (
+            <View style={[styles.chip, { backgroundColor: '#F0F0F0' }]}>
+              <Text style={[styles.chipText, { color: '#6B7280' }]}>{pronouns}</Text>
+            </View>
+          ) : null}
+          {role === 'admin' ? (
+            <View style={[styles.chip, { backgroundColor: `${theme.colors.primary}10` }]}>
+              <MaterialCommunityIcons name="shield-check" size={12} color={theme.colors.primary} />
+              <Text style={[styles.chipText, { color: theme.colors.primary }]}>Admin</Text>
+            </View>
+          ) : null}
+        </View>
 
-      {/* ─── Tab bar ─── */}
-      <View style={[styles.tabBar, { borderBottomColor: '#EBEBEB' }]}>
+        {/* ─── Edit Profile ─── */}
         <Pressable
-          onPress={() => setActiveTab('requests')}
-          style={[
-            styles.tab,
-            activeTab === 'requests' && [styles.tabActive, { borderBottomColor: '#1C1C1E' }],
+          onPress={() => navigation.navigate('EditProfile')}
+          style={({ pressed }) => [
+            styles.editBtn,
+            { borderColor: '#DBDBDB', opacity: pressed ? 0.7 : 1 },
           ]}
         >
-          <MaterialCommunityIcons
-            name="format-list-bulleted"
-            size={22}
-            color={activeTab === 'requests' ? '#1C1C1E' : '#C7C7CC'}
-          />
+          <Text style={styles.editBtnText}>Edit profile</Text>
         </Pressable>
-        <Pressable
-          onPress={() => setActiveTab('donations')}
-          style={[
-            styles.tab,
-            activeTab === 'donations' && [styles.tabActive, { borderBottomColor: '#1C1C1E' }],
-          ]}
-        >
-          <MaterialCommunityIcons
-            name="gift-outline"
-            size={22}
-            color={activeTab === 'donations' ? '#1C1C1E' : '#C7C7CC'}
-          />
-        </Pressable>
-      </View>
-    </>
-  );
 
-  return (
-    <Screen noTopPadding>
-      <FlatList
-        data={myPosts}
-        keyExtractor={(item) => item.id}
-        renderItem={renderPostItem}
-        ListHeaderComponent={headerComponent}
-        ListEmptyComponent={
-          <View style={styles.emptySection}>
-            <MaterialCommunityIcons
-              name={activeTab === 'requests' ? 'package-variant-closed' : 'gift-outline'}
-              size={36}
-              color="#D1D1D6"
-            />
-            <Text style={styles.emptyTitle}>
-              {activeTab === 'requests' ? 'No requests yet' : 'No donations yet'}
-            </Text>
-            <Text style={styles.emptyHint}>
-              {activeTab === 'requests'
-                ? 'Your borrow requests will appear here'
-                : 'Items you donate will appear here'}
+        {/* ─── Stats cards ─── */}
+        <View style={styles.statsGrid}>
+          <View style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
+            <Text style={styles.statNumber}>{lends}</Text>
+            <Text style={styles.statLabel}>Lends</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
+            <Text style={styles.statNumber}>{borrows}</Text>
+            <Text style={styles.statLabel}>Borrows</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
+            <Text style={styles.statNumber}>{trust ?? '—'}</Text>
+            <Text style={styles.statLabel}>Trust</Text>
+          </View>
+        </View>
+
+        {/* ─── About section ─── */}
+        <View style={styles.aboutSection}>
+          <Text style={styles.aboutTitle}>About</Text>
+
+          <View style={styles.aboutRow}>
+            <MaterialCommunityIcons name="account-group-outline" size={18} color="#8E8E93" />
+            <Text style={styles.aboutText}>Member of {currentGroup?.name ?? 'Group'}</Text>
+          </View>
+
+          {gradeTag ? (
+            <View style={styles.aboutRow}>
+              <MaterialCommunityIcons name="school-outline" size={18} color="#8E8E93" />
+              <Text style={styles.aboutText}>{gradeTag}</Text>
+            </View>
+          ) : null}
+
+          {pronouns ? (
+            <View style={styles.aboutRow}>
+              <MaterialCommunityIcons name="card-account-details-outline" size={18} color="#8E8E93" />
+              <Text style={styles.aboutText}>{pronouns}</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.aboutRow}>
+            <MaterialCommunityIcons name="hand-heart-outline" size={18} color="#8E8E93" />
+            <Text style={styles.aboutText}>
+              {lends + borrows} total transactions
             </Text>
           </View>
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-      />
+        </View>
+      </ScrollView>
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  listContent: { paddingBottom: 40 },
+  scroll: { paddingHorizontal: SPACING.lg, paddingBottom: 40, paddingTop: 16 },
 
-  /* Top: avatar + stats */
-  topSection: {
-    flexDirection: 'row',
+  /* Avatar section */
+  avatarSection: {
     alignItems: 'center',
-    gap: 20,
-    paddingHorizontal: SPACING.md,
-    paddingTop: 12,
+    gap: 4,
   },
   avatarWrap: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    marginBottom: 10,
   },
   avatar: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 86,
+    height: 86,
+    borderRadius: 43,
   },
   avatarPlaceholder: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 86,
+    height: 86,
+    borderRadius: 43,
     alignItems: 'center',
     justifyContent: 'center',
   },
   initialsText: {
-    fontSize: 26,
+    fontSize: 30,
     fontWeight: '700',
   },
   avatarOverlay: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 38,
+    borderRadius: 43,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  statsRow: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#8E8E93',
-    marginTop: 1,
-  },
-
-  /* Info */
-  infoSection: {
-    marginTop: 12,
-    gap: 2,
-    paddingHorizontal: SPACING.md,
-  },
   fullName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1C1C1E',
   },
   username: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#8E8E93',
   },
-  metaRow: {
+
+  /* Bio */
+  bio: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#3C3C43',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  addBio: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+
+  /* Chips */
+  chipsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+    flexWrap: 'wrap',
+  },
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 999,
   },
-  metaText: {
-    fontSize: 13,
-    color: '#8E8E93',
-  },
-  metaDot: {
-    fontSize: 13,
-    color: '#C7C7CC',
-  },
-  bio: {
-    fontSize: 14,
-    lineHeight: 19,
-    color: '#1C1C1E',
-    marginTop: 4,
-  },
-  addBio: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginTop: 4,
+  chipText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 
   /* Edit button */
   editBtn: {
     alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 9,
+    borderRadius: 10,
     borderWidth: 1,
-    marginTop: 14,
-    marginHorizontal: SPACING.md,
+    marginTop: 16,
   },
   editBtnText: {
     fontSize: 14,
@@ -393,83 +311,47 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
   },
 
-  /* Tab bar */
-  tabBar: {
+  /* Stats grid */
+  statsGrid: {
     flexDirection: 'row',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    marginTop: 16,
+    gap: 10,
+    marginTop: 20,
   },
-  tab: {
+  statCard: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
+    borderRadius: RADIUS.md,
+    gap: 2,
   },
-  tabActive: {
-    borderBottomWidth: 1.5,
-  },
-
-  /* Post items */
-  postItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: SPACING.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 12,
-  },
-  postItemLeft: {
-    flex: 1,
-    gap: 3,
-  },
-  postItemText: {
-    fontSize: 14,
-    fontWeight: '500',
+  statNumber: {
+    fontSize: 20,
+    fontWeight: '700',
     color: '#1C1C1E',
-    lineHeight: 19,
   },
-  postItemMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  postItemTag: {
+  statLabel: {
     fontSize: 12,
     color: '#8E8E93',
-  },
-  postItemDot: {
-    fontSize: 12,
-    color: '#C7C7CC',
-  },
-  postItemTime: {
-    fontSize: 12,
-    color: '#C7C7CC',
-  },
-  postItemStatus: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  postItemStatusText: {
-    fontSize: 11,
-    fontWeight: '600',
   },
 
-  /* Empty */
-  emptySection: {
-    alignItems: 'center',
-    paddingTop: 48,
-    gap: 8,
+  /* About */
+  aboutSection: {
+    marginTop: 20,
+    gap: 14,
   },
-  emptyTitle: {
+  aboutTitle: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#8E8E93',
+    fontWeight: '700',
+    color: '#1C1C1E',
   },
-  emptyHint: {
-    fontSize: 13,
-    color: '#C7C7CC',
-    textAlign: 'center',
-    paddingHorizontal: 32,
+  aboutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  aboutText: {
+    fontSize: 14,
+    color: '#3C3C43',
   },
 });
 
