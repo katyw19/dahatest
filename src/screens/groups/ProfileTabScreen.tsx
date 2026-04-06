@@ -81,6 +81,8 @@ const ProfileTabScreen = ({ navigation }: Props) => {
   const gradeTag = profile?.gradeTag ?? (stats as any)?.gradeTag;
   const role = stats?.role;
 
+  const initials = (fullName.split(' ').map((w: string) => w[0]).join('').slice(0, 2) || '?').toUpperCase();
+
   if (loading) {
     return (
       <Screen noTopPadding>
@@ -94,17 +96,15 @@ const ProfileTabScreen = ({ navigation }: Props) => {
   return (
     <Screen noTopPadding>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* ─── Header Card ─── */}
-        <View style={[styles.headerCard, { backgroundColor: theme.colors.surface }]}>
+        {/* ─── Top section: avatar + stats side by side ─── */}
+        <View style={styles.topSection}>
           {/* Avatar */}
           <Pressable onPress={handlePickAvatar} style={styles.avatarWrap}>
             {profile?.photoURL ? (
               <Image source={{ uri: profile.photoURL }} style={styles.avatar} />
             ) : (
-              <View style={[styles.avatarPlaceholder, { backgroundColor: `${theme.colors.primary}20` }]}>
-                <Text style={[styles.initialsText, { color: theme.colors.primary }]}>
-                  {(fullName.split(' ').map((w: string) => w[0]).join('').slice(0, 2) || '?').toUpperCase()}
-                </Text>
+              <View style={[styles.avatarPlaceholder, { backgroundColor: `${theme.colors.primary}15` }]}>
+                <Text style={[styles.initialsText, { color: theme.colors.primary }]}>{initials}</Text>
               </View>
             )}
             {uploading ? (
@@ -112,65 +112,49 @@ const ProfileTabScreen = ({ navigation }: Props) => {
                 <ActivityIndicator color="#fff" />
               </View>
             ) : null}
-            <View style={[styles.cameraBadge, { backgroundColor: theme.colors.primary }]}>
-              <MaterialCommunityIcons name="pencil" size={12} color="#fff" />
-            </View>
           </Pressable>
 
-          {/* Name + subtitle */}
+          {/* Stats */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{stats?.lendsCompleted ?? 0}</Text>
+              <Text style={styles.statLabel}>Lends</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{stats?.borrowsCompleted ?? 0}</Text>
+              <Text style={styles.statLabel}>Borrows</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{stats?.trustScore ?? '—'}</Text>
+              <Text style={styles.statLabel}>Trust</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ─── Name + meta ─── */}
+        <View style={styles.infoSection}>
           <Text style={[styles.fullName, { color: '#1C1C1E' }]}>{fullName}</Text>
           {displayName && displayName !== fullName ? (
             <Text style={styles.username}>@{displayName}</Text>
           ) : null}
 
-          {/* Meta tags row */}
+          {/* Meta inline */}
           <View style={styles.metaRow}>
-            {pronouns ? (
-              <View style={[styles.metaChip, { backgroundColor: theme.colors.secondary }]}>
-                <Text style={[styles.metaChipText, { color: theme.colors.onSecondary }]}>{pronouns}</Text>
-              </View>
-            ) : null}
-            {gradeTag ? (
-              <View style={[styles.metaChip, { backgroundColor: theme.colors.secondary }]}>
-                <Text style={[styles.metaChipText, { color: theme.colors.onSecondary }]}>{gradeTag}</Text>
-              </View>
-            ) : null}
-            {role === 'admin' ? (
-              <View style={[styles.metaChip, { backgroundColor: `${theme.colors.primary}20` }]}>
-                <MaterialCommunityIcons name="shield-check" size={12} color={theme.colors.primary} />
-                <Text style={[styles.metaChipText, { color: theme.colors.primary }]}>Admin</Text>
-              </View>
-            ) : null}
+            {gradeTag ? <Text style={styles.metaText}>{gradeTag}</Text> : null}
+            {gradeTag && (pronouns || role === 'admin') ? <Text style={styles.metaDot}>·</Text> : null}
+            {pronouns ? <Text style={styles.metaText}>{pronouns}</Text> : null}
+            {pronouns && role === 'admin' ? <Text style={styles.metaDot}>·</Text> : null}
+            {role === 'admin' ? <Text style={[styles.metaText, { color: theme.colors.primary }]}>Admin</Text> : null}
           </View>
 
           {/* Bio */}
           {bio ? (
-            <Text style={[styles.bio, { color: '#3C3C43' }]}>{bio}</Text>
+            <Text style={styles.bio}>{bio}</Text>
           ) : (
             <Pressable onPress={() => navigation.navigate('EditProfile')}>
-              <Text style={[styles.addBio, { color: theme.colors.primary }]}>+ Add a bio</Text>
+              <Text style={[styles.addBio, { color: theme.colors.primary }]}>Add a bio</Text>
             </Pressable>
           )}
-        </View>
-
-        {/* ─── Stats Row ─── */}
-        <View style={[styles.statsRow, { backgroundColor: theme.colors.surface }]}>
-          <View style={styles.statItem}>
-            <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{stats?.lendsCompleted ?? 0}</Text>
-            <Text style={styles.statLabel}>Lends</Text>
-          </View>
-          <View style={[styles.statDivider, { backgroundColor: theme.colors.outline }]} />
-          <View style={styles.statItem}>
-            <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{stats?.borrowsCompleted ?? 0}</Text>
-            <Text style={styles.statLabel}>Borrows</Text>
-          </View>
-          <View style={[styles.statDivider, { backgroundColor: theme.colors.outline }]} />
-          <View style={styles.statItem}>
-            <Text style={[styles.statNumber, { color: '#1C1C1E' }]}>{stats?.trustScore ?? '—'}</Text>
-            <Text style={styles.statLabel}>
-              Trust{stats?.trustScoreIsDefault ? ' (new)' : ''}
-            </Text>
-          </View>
         </View>
 
         {/* ─── Action Buttons ─── */}
@@ -179,65 +163,53 @@ const ProfileTabScreen = ({ navigation }: Props) => {
             onPress={() => navigation.navigate('EditProfile')}
             style={({ pressed }) => [
               styles.actionBtn,
-              { backgroundColor: theme.colors.primary, opacity: pressed ? 0.85 : 1 },
+              { backgroundColor: theme.colors.surface, borderColor: '#DBDBDB', opacity: pressed ? 0.7 : 1 },
             ]}
           >
-            <MaterialCommunityIcons name="pencil-outline" size={14} color="#fff" />
             <Text style={styles.actionBtnText}>Edit Profile</Text>
           </Pressable>
           <Pressable
             onPress={() => navigation.navigate('Settings')}
             style={({ pressed }) => [
               styles.actionBtn,
-              { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.outline, opacity: pressed ? 0.85 : 1 },
+              { backgroundColor: theme.colors.surface, borderColor: '#DBDBDB', opacity: pressed ? 0.7 : 1 },
             ]}
           >
-            <MaterialCommunityIcons name="cog-outline" size={14} color={'#1C1C1E'} />
-            <Text style={[styles.actionBtnText, { color: '#1C1C1E' }]}>Settings</Text>
+            <Text style={styles.actionBtnText}>Settings</Text>
           </Pressable>
-        </View>
-
-        {/* ─── Quick Links ─── */}
-        <View style={[styles.linksCard, { backgroundColor: theme.colors.surface }]}>
           <Pressable
             onPress={() => {
               const tab = navigation.getParent?.();
-              if (tab) {
-                tab.navigate('BadgesTab' as never);
-              }
+              if (tab) tab.navigate('BadgesTab' as never);
             }}
-            style={({ pressed }) => [styles.linkRow, pressed && { backgroundColor: `${theme.colors.primary}08` }]}
+            style={({ pressed }) => [
+              styles.actionBtn,
+              { backgroundColor: theme.colors.surface, borderColor: '#DBDBDB', opacity: pressed ? 0.7 : 1 },
+            ]}
           >
-            <View style={[styles.linkIcon, { backgroundColor: '#FFD60A20' }]}>
-              <MaterialCommunityIcons name="trophy-outline" size={16} color="#FFD60A" />
-            </View>
-            <Text style={[styles.linkText, { color: '#1C1C1E' }]}>Badges</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
-          </Pressable>
-
-          <View style={[styles.linkDivider, { backgroundColor: theme.colors.outline }]} />
-
-          <Pressable
-            onPress={() => navigation.navigate('ThemePicker')}
-            style={({ pressed }) => [styles.linkRow, pressed && { backgroundColor: `${theme.colors.primary}08` }]}
-          >
-            <View style={[styles.linkIcon, { backgroundColor: `${theme.colors.primary}20` }]}>
-              <MaterialCommunityIcons name="palette-outline" size={16} color={theme.colors.primary} />
-            </View>
-            <Text style={[styles.linkText, { color: '#1C1C1E' }]}>Theme</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
+            <Text style={styles.actionBtnText}>Badges</Text>
           </Pressable>
         </View>
 
-        {/* ─── Sign Out ─── */}
+        {/* ─── Divider ─── */}
+        <View style={[styles.divider, { backgroundColor: '#EBEBEB' }]} />
+
+        {/* ─── Quick links ─── */}
+        <Pressable
+          onPress={() => navigation.navigate('ThemePicker')}
+          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.6 }]}
+        >
+          <MaterialCommunityIcons name="palette-outline" size={18} color="#8E8E93" />
+          <Text style={styles.linkText}>Theme</Text>
+          <MaterialCommunityIcons name="chevron-right" size={18} color="#C7C7CC" />
+        </Pressable>
+
         <Pressable
           onPress={signOut}
-          style={({ pressed }) => [
-            styles.signOutBtn,
-            { opacity: pressed ? 0.7 : 1 },
-          ]}
+          style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.6 }]}
         >
-          <Text style={styles.signOutText}>Sign Out</Text>
+          <MaterialCommunityIcons name="logout" size={18} color="#FF3B30" />
+          <Text style={[styles.linkText, { color: '#FF3B30' }]}>Sign Out</Text>
         </Pressable>
       </ScrollView>
     </Screen>
@@ -246,33 +218,28 @@ const ProfileTabScreen = ({ navigation }: Props) => {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scroll: { paddingBottom: 40, gap: 8 },
+  scroll: { paddingHorizontal: SPACING.md, paddingBottom: 40, paddingTop: 12 },
 
-  /* Header card */
-  headerCard: {
+  /* Top: avatar + stats */
+  topSection: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.lg,
-    marginHorizontal: SPACING.sm,
-    marginTop: 12,
-    gap: 4,
+    gap: 20,
   },
   avatarWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    marginBottom: 6,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
   },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
   },
   avatarPlaceholder: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -282,76 +249,18 @@ const styles = StyleSheet.create({
   },
   avatarOverlay: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 36,
+    borderRadius: 38,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  cameraBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  fullName: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  username: {
-    fontSize: 13,
-    color: '#8E8E93',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    gap: 6,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  metaChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-  },
-  metaChipText: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  bio: {
-    fontSize: 13,
-    lineHeight: 18,
-    textAlign: 'center',
-    marginTop: 4,
-    paddingHorizontal: 8,
-    color: '#3C3C43',
-  },
-  addBio: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginTop: 4,
-  },
-
-  /* Stats */
   statsRow: {
+    flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-around',
-    paddingVertical: 14,
-    borderRadius: RADIUS.lg,
-    marginHorizontal: SPACING.sm,
   },
   statItem: {
     alignItems: 'center',
-    flex: 1,
   },
   statNumber: {
     fontSize: 18,
@@ -362,72 +271,84 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     marginTop: 1,
   },
-  statDivider: {
-    width: 1,
-    height: 24,
+
+  /* Info */
+  infoSection: {
+    marginTop: 12,
+    gap: 2,
+  },
+  fullName: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  username: {
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  metaText: {
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  metaDot: {
+    fontSize: 13,
+    color: '#C7C7CC',
+  },
+  bio: {
+    fontSize: 14,
+    lineHeight: 19,
+    color: '#1C1C1E',
+    marginTop: 4,
+  },
+  addBio: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 4,
   },
 
   /* Actions */
   actionsRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginHorizontal: SPACING.sm,
+    gap: 6,
+    marginTop: 14,
   },
   actionBtn: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 9,
-    borderRadius: RADIUS.md,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   actionBtnText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#fff',
+    color: '#1C1C1E',
+  },
+
+  /* Divider */
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginTop: 16,
+    marginBottom: 8,
   },
 
   /* Links */
-  linksCard: {
-    borderRadius: RADIUS.lg,
-    marginHorizontal: SPACING.sm,
-    overflow: 'hidden',
-  },
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: SPACING.md,
-  },
-  linkIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 7,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
+    gap: 10,
   },
   linkText: {
     flex: 1,
     fontSize: 14,
     fontWeight: '500',
-  },
-  linkDivider: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: 50,
-  },
-
-  /* Sign out */
-  signOutBtn: {
-    alignItems: 'center',
-    paddingVertical: 12,
-    marginHorizontal: SPACING.sm,
-  },
-  signOutText: {
-    color: '#FF3B30',
-    fontSize: 14,
-    fontWeight: '600',
+    color: '#1C1C1E',
   },
 });
 
