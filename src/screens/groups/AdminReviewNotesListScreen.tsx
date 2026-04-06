@@ -184,7 +184,7 @@ const AdminReviewNotesListScreen = ({ navigation }: Props) => {
   };
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <ToggleButton.Row
         onValueChange={(value) => setOnlyNotes(value === 'notes')}
         value={onlyNotes ? 'notes' : 'all'}

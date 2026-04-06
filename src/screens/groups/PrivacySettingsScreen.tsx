@@ -10,7 +10,7 @@ const PrivacySettingsScreen = () => {
   const [showActivity, setShowActivity] = useState(true);
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <Text style={[styles.header, { color: '#8E8E93' }]}>VISIBILITY</Text>
       <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
         <View style={[styles.row, styles.rowBorder, { borderBottomColor: theme.colors.outline }]}>

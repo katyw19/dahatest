@@ -184,7 +184,7 @@ const EditProfileScreen = ({ navigation }: Props) => {
   }
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         {error ? <HelperText type="error">{error}</HelperText> : null}
 

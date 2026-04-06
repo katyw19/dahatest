@@ -13,7 +13,7 @@ const ThemePickerScreen = () => {
   const themes = Object.keys(THEME_PREVIEWS) as ThemeName[];
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         {themes.map((name) => {
           const preview = THEME_PREVIEWS[name];

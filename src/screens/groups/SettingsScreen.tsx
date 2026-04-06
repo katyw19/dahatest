@@ -68,7 +68,6 @@ const SettingsScreen = ({ navigation }: Props) => {
       icon: 'logout',
       label: 'Sign Out',
       description: 'Sign out of your account',
-      danger: true,
       onPress: () => {
         Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
           { text: 'Cancel', style: 'cancel' },

@@ -35,7 +35,7 @@ const NotificationSettingsScreen = () => {
   ];
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <Text style={[styles.header, { color: '#8E8E93' }]}>PUSH NOTIFICATIONS</Text>
       <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
         {rows.map((row, i) => (

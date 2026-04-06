@@ -10,7 +10,7 @@ const AboutScreen = () => {
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <View style={styles.logoSection}>
         <View style={[styles.iconCircle, { backgroundColor: `${theme.colors.primary}14` }]}>
           <MaterialCommunityIcons name="hand-heart-outline" size={40} color={theme.colors.primary} />

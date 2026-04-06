@@ -97,7 +97,7 @@ const AdminActionLogScreen = ({}: Props) => {
   };
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <FlatList
         data={actions}
         keyExtractor={(item) => item.id}

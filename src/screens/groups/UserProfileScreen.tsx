@@ -59,7 +59,7 @@ const UserProfileScreen = ({ route }: Props) => {
 
   if (loading) {
     return (
-      <Screen>
+      <Screen noTopPadding>
         <View style={styles.center}>
           <ActivityIndicator />
         </View>
@@ -68,7 +68,7 @@ const UserProfileScreen = ({ route }: Props) => {
   }
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ─── Header Card ─── */}
         <View style={[styles.headerCard, { backgroundColor: theme.colors.surface }]}>

@@ -98,7 +98,7 @@ const AdminReportsInboxScreen = ({ navigation }: Props) => {
   };
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <SegmentedButtons
         value={statusFilter}
         onValueChange={(v) => setStatusFilter(v as ReportStatus)}

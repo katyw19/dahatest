@@ -70,7 +70,7 @@ const AdminReviewNoteDetailScreen = ({ route, navigation }: Props) => {
 
   if (!note) {
     return (
-      <Screen>
+      <Screen noTopPadding>
         <View style={styles.center}>
           <Text style={{ color: '#8E8E93', fontSize: 15 }}>No note found.</Text>
           <Pressable onPress={() => navigation.goBack()} style={{ marginTop: 16 }}>
@@ -99,7 +99,7 @@ const AdminReviewNoteDetailScreen = ({ route, navigation }: Props) => {
   });
 
   return (
-    <Screen>
+    <Screen noTopPadding>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ─── Outcome Header ─── */}
         <View style={[styles.outcomeCard, { backgroundColor: theme.colors.surface }]}>
