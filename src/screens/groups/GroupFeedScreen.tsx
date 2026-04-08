@@ -139,13 +139,13 @@ const GroupFeedScreen = () => {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: -4 }}>
           {currentMembership?.role === 'admin' ? (
-            <IconButton icon="account-plus" onPress={() => navigation.navigate('GroupInvite')} />
+            <IconButton icon="account-plus" size={22} onPress={() => navigation.navigate('GroupInvite')} style={{ margin: 0 }} />
           ) : null}
-          <IconButton icon="chat" onPress={() => navigation.navigate('ChatsList')} />
+          <IconButton icon="chat" size={22} onPress={() => navigation.navigate('ChatsList')} style={{ margin: 0 }} />
           {currentMembership?.role === 'admin' ? (
-            <IconButton icon="dots-vertical" onPress={() => navigation.navigate('AdminTools')} />
+            <IconButton icon="dots-vertical" size={22} onPress={() => navigation.navigate('AdminTools')} style={{ margin: 0 }} />
           ) : null}
         </View>
       ),
