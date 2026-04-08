@@ -281,9 +281,9 @@ const ProfileStackScreens = () => {
           headerRight: () => (
             <IconButton
               icon="cog"
+              size={22}
               onPress={() => navigation.navigate('Settings')}
-              style={{ width: 36, height: 36 }}
-              contentStyle={{ alignItems: 'center', justifyContent: 'center' }}
+              style={{ margin: 0 }}
               iconColor={theme.colors.onSurface}
             />
           ),
