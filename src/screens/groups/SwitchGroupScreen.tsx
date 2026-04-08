@@ -1,17 +1,19 @@
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
-import { Button, Card, Divider, Text, useTheme } from 'react-native-paper';
+import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { Text, useTheme } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useGroupContext } from './GroupProvider';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
 import { useEffect, useState } from 'react';
 import { listenMyMemberships } from '../../services/groups';
 import { useAuth } from '../../context/AuthContext';
+import { SPACING, RADIUS } from '../../theme/spacing';
 
 type Props = NativeStackScreenProps<GroupStackParamList, 'SwitchGroup'>;
 
 const SwitchGroupScreen = ({ navigation }: Props) => {
   const theme = useTheme();
-  const { memberships, setActiveGroup } = useGroupContext();
+  const { memberships, setActiveGroup, currentGroup } = useGroupContext();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [localMemberships, setLocalMemberships] = useState(memberships);
@@ -37,36 +39,49 @@ const SwitchGroupScreen = ({ navigation }: Props) => {
       contentContainerStyle={styles.container}
       data={localMemberships}
       keyExtractor={(item) => item.groupId}
-      ListHeaderComponent={
-        <Text variant="headlineSmall" style={styles.title}>
-          Switch group
-        </Text>
-      }
-      renderItem={({ item }) => (
-        <Card style={styles.card} mode="outlined">
-          <Card.Title title={item.groupName ?? item.groupId} subtitle={`Role: ${item.role}`} />
-          <Card.Actions>
-            <Button mode="contained" onPress={() => handleSelect(item.groupId)}>
-              Switch
-            </Button>
-          </Card.Actions>
-        </Card>
-      )}
-      ListFooterComponent={
-        <View style={styles.footer}>
-          <Divider />
-          <Button
-            mode="outlined"
-            icon="plus"
-            onPress={() => navigation.navigate('CreateGroupDetails')}
+      renderItem={({ item }) => {
+        const isActive = item.groupId === currentGroup?.id;
+        return (
+          <Pressable
+            onPress={() => handleSelect(item.groupId)}
+            style={({ pressed }) => [
+              styles.groupRow,
+              { backgroundColor: pressed ? `${theme.colors.primary}08` : theme.colors.surface },
+              isActive && { borderColor: theme.colors.primary, borderWidth: 1.5 },
+            ]}
           >
-            Create a new group
-          </Button>
-        </View>
+            <View style={[styles.groupIcon, { backgroundColor: `${theme.colors.primary}12` }]}>
+              <MaterialCommunityIcons name="account-group" size={22} color={theme.colors.primary} />
+            </View>
+            <View style={styles.groupInfo}>
+              <Text style={styles.groupName}>{item.groupName ?? item.groupId}</Text>
+              <Text style={styles.groupRole}>{item.role}</Text>
+            </View>
+            {isActive ? (
+              <MaterialCommunityIcons name="check-circle" size={20} color={theme.colors.primary} />
+            ) : (
+              <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
+            )}
+          </Pressable>
+        );
+      }}
+      ListFooterComponent={
+        <Pressable
+          onPress={() => navigation.navigate('CreateGroupDetails')}
+          style={({ pressed }) => [
+            styles.createRow,
+            { borderColor: '#DBDBDB', opacity: pressed ? 0.7 : 1 },
+          ]}
+        >
+          <MaterialCommunityIcons name="plus" size={20} color={theme.colors.primary} />
+          <Text style={[styles.createText, { color: theme.colors.primary }]}>Create a new group</Text>
+        </Pressable>
       }
       ListEmptyComponent={
         <View style={styles.empty}>
-          <Text>No memberships found. If you were just approved, try pulling to refresh.</Text>
+          <MaterialCommunityIcons name="account-group-outline" size={40} color="#D1D1D6" />
+          <Text style={styles.emptyTitle}>No groups yet</Text>
+          <Text style={styles.emptyHint}>Join or create a group to get started</Text>
         </View>
       }
       refreshControl={
@@ -92,24 +107,71 @@ const SwitchGroupScreen = ({ navigation }: Props) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    padding: SPACING.md,
+    gap: 8,
+    paddingBottom: 40,
+  },
+
+  groupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: RADIUS.md,
     gap: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#F0F0F0',
   },
-  title: {
-    fontWeight: '700',
-    marginBottom: 8,
+  groupIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  card: {
-    borderRadius: 8,
-    marginBottom: 8,
+  groupInfo: {
+    flex: 1,
+    gap: 2,
   },
+  groupName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1C1C1E',
+  },
+  groupRole: {
+    fontSize: 13,
+    color: '#8E8E93',
+    textTransform: 'capitalize',
+  },
+
+  createRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    marginTop: 4,
+  },
+  createText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
   empty: {
     alignItems: 'center',
-    marginTop: 24,
-  },
-  footer: {
-    marginTop: 12,
+    paddingTop: 48,
     gap: 8,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  emptyHint: {
+    fontSize: 13,
+    color: '#C7C7CC',
   },
 });
 
