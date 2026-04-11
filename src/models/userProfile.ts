@@ -30,6 +30,16 @@ export type UserProfile = {
   trustScore: number; // 0–100
   trustScoreIsDefault: boolean;
 
+  // Push notifications
+  expoPushToken?: string;
+  notificationPrefs?: {
+    newOffers: boolean;
+    messages: boolean;
+    reviewReminders: boolean;
+    announcements: boolean;
+    statusUpdates: boolean;
+  };
+
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 };
