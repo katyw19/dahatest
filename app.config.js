@@ -6,6 +6,13 @@ export default ({ config }) => ({
   plugins: [
     "expo-camera",
     "expo-font",
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/notification-icon.png",
+        color: "#ffffff",
+      },
+    ],
   ],
 
   extra: {
