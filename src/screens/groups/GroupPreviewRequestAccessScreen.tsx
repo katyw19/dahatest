@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { Button, HelperText, Text, TextInput, useTheme } from 'react-native-paper';
 import { doc, getDoc } from 'firebase/firestore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { AppStackParamList } from '../../navigation/AppNavigator';
+// Works from both AppNavigator and GroupShellNavigator
 import { getFirebaseDb } from '../../services/firebase';
 import type { Group } from '../../models/group';
 import { getPostAudienceOptions } from '../../utils/grades';
@@ -16,7 +16,7 @@ import {
 } from '../../services/groups';
 import { useAuth } from '../../context/AuthContext';
 
-type Props = NativeStackScreenProps<AppStackParamList, 'GroupPreviewRequestAccess'>;
+type Props = NativeStackScreenProps<any, 'GroupPreviewRequestAccess'>;
 
 const schema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -95,7 +95,11 @@ const GroupPreviewRequestAccessScreen = ({ route, navigation }: Props) => {
         groupName: group.name,
         inviteCode: group.inviteCode,
       });
-      navigation.navigate('RequestSent');
+      Alert.alert(
+        'Request Sent!',
+        'Your request to join has been submitted. An admin will review it shortly.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit request.');
     }
