@@ -122,12 +122,13 @@ service cloud.firestore {
     // ── User Memberships Mirror ─────────────────────────────────────
     match /users/{uid}/memberships/{membershipId} {
       allow read: if isSignedIn() && request.auth.uid == uid;
-      allow write: if isSignedIn() && (request.auth.uid == uid || isGroupMember(membershipId));
+      allow write: if isSignedIn() && (request.auth.uid == uid || isGroupAdmin(membershipId));
     }
 
     // ── User Join Requests Mirror ───────────────────────────────────
     match /users/{uid}/joinRequests/{groupId} {
-      allow read, write: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if isSignedIn() && (request.auth.uid == uid || isGroupAdmin(groupId));
     }
 
     // Default deny
