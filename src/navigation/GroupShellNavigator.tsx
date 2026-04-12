@@ -125,6 +125,7 @@ const FeedStackScreens = () => (
     <FeedStack.Screen name="CreateGroupDetails" component={CreateGroupDetailsScreen} options={{ title: 'Create Group' }} />
     <FeedStack.Screen name="ReportCreate" component={ReportCreateScreen} options={{ title: 'Report' }} />
     <FeedStack.Screen name="AdminTools" component={AdminToolsScreen} options={{ title: 'Admin Tools' }} />
+    <FeedStack.Screen name="AdminTab" component={AdminTabScreen} options={{ title: 'Join Requests' }} />
     <FeedStack.Screen
       name="AdminReportsInbox"
       component={AdminReportsInboxScreen}
@@ -187,6 +188,7 @@ const RequestsStackScreens = () => (
     <RequestsStack.Screen name="CreateGroupDetails" component={CreateGroupDetailsScreen} options={{ title: 'Create Group' }} />
     <RequestsStack.Screen name="ReportCreate" component={ReportCreateScreen} options={{ title: 'Report' }} />
     <RequestsStack.Screen name="AdminTools" component={AdminToolsScreen} options={{ title: 'Admin Tools' }} />
+    <RequestsStack.Screen name="AdminTab" component={AdminTabScreen} options={{ title: 'Join Requests' }} />
     <RequestsStack.Screen
       name="AdminReportsInbox"
       component={AdminReportsInboxScreen}
@@ -239,6 +241,7 @@ const ChatsStackScreens = () => (
     <ChatsStack.Screen name="GroupPreviewRequestAccess" component={GroupPreviewRequestAccessScreen} options={{ title: 'Join Group' }} />
     <ChatsStack.Screen name="ReportCreate" component={ReportCreateScreen} options={{ title: 'Report' }} />
     <ChatsStack.Screen name="AdminTools" component={AdminToolsScreen} options={{ title: 'Admin Tools' }} />
+    <ChatsStack.Screen name="AdminTab" component={AdminTabScreen} options={{ title: 'Join Requests' }} />
     <ChatsStack.Screen
       name="AdminReportsInbox"
       component={AdminReportsInboxScreen}
