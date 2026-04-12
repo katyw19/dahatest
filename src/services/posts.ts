@@ -1,6 +1,8 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   getDocs,
   onSnapshot,
   orderBy,
@@ -135,4 +137,10 @@ export const createPost = async (
   }
 
   await addDoc(postsRef, data);
+};
+
+export const deletePost = async (groupId: string, postId: string) => {
+  const db = getFirebaseDb();
+  if (!db) throw new Error('Firestore not configured');
+  await deleteDoc(doc(db, `groups/${groupId}/posts/${postId}`));
 };
