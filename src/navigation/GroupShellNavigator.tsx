@@ -36,6 +36,8 @@ import ChangePasswordScreen from '../screens/groups/ChangePasswordScreen';
 import NotificationSettingsScreen from '../screens/groups/NotificationSettingsScreen';
 import PrivacySettingsScreen from '../screens/groups/PrivacySettingsScreen';
 import AboutScreen from '../screens/groups/AboutScreen';
+import JoinGroupScreen from '../screens/JoinGroupScreen';
+import GroupPreviewRequestAccessScreen from '../screens/groups/GroupPreviewRequestAccessScreen';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { IconButton, useTheme } from 'react-native-paper';
 
@@ -52,6 +54,8 @@ export type GroupStackParamList = {
   GroupFeed: undefined;
   MyRequests: undefined;
   SwitchGroup: undefined;
+  JoinGroup: undefined;
+  GroupPreviewRequestAccess: { groupId: string };
   CreateGroupDetails: undefined;
   PostDetail: { postId: string; offeredSuccess?: boolean };
   CreatePost: undefined;
@@ -114,6 +118,8 @@ const FeedStackScreens = () => (
     <FeedStack.Screen name="ChatThread" component={ChatThreadScreen} options={{ title: 'Chat' }} />
     <FeedStack.Screen name="ChatsList" component={ChatsListScreen} options={{ title: 'Chats' }} />
     <FeedStack.Screen name="SwitchGroup" component={SwitchGroupScreen} options={{ title: 'Switch Group' }} />
+    <FeedStack.Screen name="JoinGroup" component={JoinGroupScreen} options={{ title: 'Join Group' }} />
+    <FeedStack.Screen name="GroupPreviewRequestAccess" component={GroupPreviewRequestAccessScreen} options={{ title: 'Join Group' }} />
     <FeedStack.Screen name="GroupInvite" component={GroupInviteScreen} options={{ title: 'Invite' }} />
     <FeedStack.Screen name="Review" component={ReviewScreen} options={{ title: 'Review' }} />
     <FeedStack.Screen name="CreateGroupDetails" component={CreateGroupDetailsScreen} options={{ title: 'Create Group' }} />
@@ -174,6 +180,8 @@ const RequestsStackScreens = () => (
     <RequestsStack.Screen name="ChatThread" component={ChatThreadScreen} options={{ title: 'Chat' }} />
     <RequestsStack.Screen name="ChatsList" component={ChatsListScreen} options={{ title: 'Chats' }} />
     <RequestsStack.Screen name="SwitchGroup" component={SwitchGroupScreen} options={{ title: 'Switch Group' }} />
+    <RequestsStack.Screen name="JoinGroup" component={JoinGroupScreen} options={{ title: 'Join Group' }} />
+    <RequestsStack.Screen name="GroupPreviewRequestAccess" component={GroupPreviewRequestAccessScreen} options={{ title: 'Join Group' }} />
     <RequestsStack.Screen name="GroupInvite" component={GroupInviteScreen} options={{ title: 'Invite' }} />
     <RequestsStack.Screen name="Review" component={ReviewScreen} options={{ title: 'Review' }} />
     <RequestsStack.Screen name="CreateGroupDetails" component={CreateGroupDetailsScreen} options={{ title: 'Create Group' }} />
@@ -227,6 +235,8 @@ const ChatsStackScreens = () => (
     <ChatsStack.Screen name="ChatThread" component={ChatThreadScreen} options={{ title: 'Chat' }} />
     <ChatsStack.Screen name="Review" component={ReviewScreen} options={{ title: 'Review' }} />
     <ChatsStack.Screen name="SwitchGroup" component={SwitchGroupScreen} options={{ title: 'Switch Group' }} />
+    <ChatsStack.Screen name="JoinGroup" component={JoinGroupScreen} options={{ title: 'Join Group' }} />
+    <ChatsStack.Screen name="GroupPreviewRequestAccess" component={GroupPreviewRequestAccessScreen} options={{ title: 'Join Group' }} />
     <ChatsStack.Screen name="ReportCreate" component={ReportCreateScreen} options={{ title: 'Report' }} />
     <ChatsStack.Screen name="AdminTools" component={AdminToolsScreen} options={{ title: 'Admin Tools' }} />
     <ChatsStack.Screen
@@ -331,6 +341,8 @@ const ProfileStackScreens = () => {
       ) : null}
 
       <ProfileStack.Screen name="SwitchGroup" component={SwitchGroupScreen} options={{ title: 'Switch Group' }} />
+      <ProfileStack.Screen name="JoinGroup" component={JoinGroupScreen} options={{ title: 'Join Group' }} />
+      <ProfileStack.Screen name="GroupPreviewRequestAccess" component={GroupPreviewRequestAccessScreen} options={{ title: 'Join Group' }} />
       <ProfileStack.Screen name="GroupInvite" component={GroupInviteScreen} options={{ title: 'Invite' }} />
       <ProfileStack.Screen
         name="CreateGroupDetails"

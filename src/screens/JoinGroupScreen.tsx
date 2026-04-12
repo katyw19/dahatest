@@ -4,12 +4,11 @@ import { CameraView, Camera, type BarcodeScanningResult } from 'expo-camera';
 import { Button, Card, Text, TextInput, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { AppStackParamList } from '../navigation/AppNavigator';
 import { getGroupByInviteCode } from '../services/groups';
 
 const JoinGroupScreen = () => {
   const theme = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<any>>();
 
   const [inviteCode, setInviteCode] = useState('');
   const [error, setError] = useState<string | null>(null);
