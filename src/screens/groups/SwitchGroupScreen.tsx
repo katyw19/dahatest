@@ -66,16 +66,28 @@ const SwitchGroupScreen = ({ navigation }: Props) => {
         );
       }}
       ListFooterComponent={
-        <Pressable
-          onPress={() => navigation.navigate('CreateGroupDetails')}
-          style={({ pressed }) => [
-            styles.createRow,
-            { borderColor: '#DBDBDB', opacity: pressed ? 0.7 : 1 },
-          ]}
-        >
-          <MaterialCommunityIcons name="plus" size={20} color={theme.colors.primary} />
-          <Text style={[styles.createText, { color: theme.colors.primary }]}>Create a new group</Text>
-        </Pressable>
+        <View style={styles.footerButtons}>
+          <Pressable
+            onPress={() => navigation.navigate('JoinGroup')}
+            style={({ pressed }) => [
+              styles.actionRow,
+              { borderColor: '#DBDBDB', opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <MaterialCommunityIcons name="key-variant" size={20} color={theme.colors.primary} />
+            <Text style={[styles.actionText, { color: theme.colors.primary }]}>Join with invite code</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate('CreateGroupDetails')}
+            style={({ pressed }) => [
+              styles.actionRow,
+              { borderColor: '#DBDBDB', opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <MaterialCommunityIcons name="plus" size={20} color={theme.colors.primary} />
+            <Text style={[styles.actionText, { color: theme.colors.primary }]}>Create a new group</Text>
+          </Pressable>
+        </View>
       }
       ListEmptyComponent={
         <View style={styles.empty}>
@@ -143,7 +155,11 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
 
-  createRow: {
+  footerButtons: {
+    gap: 8,
+    marginTop: 4,
+  },
+  actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -152,9 +168,8 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    marginTop: 4,
   },
-  createText: {
+  actionText: {
     fontSize: 15,
     fontWeight: '600',
   },
