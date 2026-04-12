@@ -20,6 +20,12 @@ const AdminToolsScreen = ({ navigation }: Props) => {
 
   const items: MenuItem[] = [
     {
+      icon: 'account-clock-outline',
+      label: 'Join Requests',
+      description: 'Review pending requests to join',
+      onPress: () => navigation.navigate('AdminTab'),
+    },
+    {
       icon: 'inbox-outline',
       label: 'Reports Inbox',
       description: 'View and manage user reports',
