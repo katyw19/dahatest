@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text, useTheme } from 'react-native-paper';
+import { deletePost } from '../../services/posts';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { collection, doc, onSnapshot } from 'firebase/firestore';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -193,27 +194,80 @@ const PostDetailScreen = ({ route, navigation }: Props) => {
     loadThread();
   }, [post?.acceptedOfferId, currentGroup?.id]);
 
+  const handleDeletePost = () => {
+    if (!currentGroup) return;
+    Alert.alert(
+      'Delete post',
+      'Are you sure you want to delete this post? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deletePost(currentGroup.id, postId);
+              navigation.goBack();
+            } catch {
+              Alert.alert('Error', 'Failed to delete post.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleMoreMenu = () => {
+    const options = isAuthor
+      ? ['Delete Post', 'Report', 'Cancel']
+      : ['Report', 'Cancel'];
+    const destructiveIndex = isAuthor ? 0 : -1;
+    const cancelIndex = options.length - 1;
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, destructiveButtonIndex: destructiveIndex, cancelButtonIndex: cancelIndex },
+        (idx) => {
+          if (isAuthor) {
+            if (idx === 0) handleDeletePost();
+            if (idx === 1) navigation.navigate('ReportCreate', {
+              type: 'post', postId, targetUid: post?.authorUid,
+              targetName: displayName, snippet: post?.text?.slice(0, 140) ?? '',
+            });
+          } else {
+            if (idx === 0) navigation.navigate('ReportCreate', {
+              type: 'post', postId, targetUid: post?.authorUid,
+              targetName: displayName, snippet: post?.text?.slice(0, 140) ?? '',
+            });
+          }
+        }
+      );
+    } else {
+      // Android fallback
+      Alert.alert('Options', undefined, [
+        ...(isAuthor ? [{ text: 'Delete Post', style: 'destructive' as const, onPress: handleDeletePost }] : []),
+        { text: 'Report', onPress: () => navigation.navigate('ReportCreate', {
+          type: 'post', postId, targetUid: post?.authorUid,
+          targetName: displayName, snippet: post?.text?.slice(0, 140) ?? '',
+        })},
+        { text: 'Cancel', style: 'cancel' as const },
+      ]);
+    }
+  };
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <IconButton
-          icon="alert-circle-outline"
-          style={styles.headerIcon}
-          contentStyle={styles.headerIconContent}
+          icon="dots-horizontal"
+          size={22}
+          style={{ margin: 0 }}
           iconColor={theme.colors.onSurface}
-          onPress={() =>
-            navigation.navigate('ReportCreate', {
-              type: 'post',
-              postId,
-              targetUid: post?.authorUid,
-              targetName: displayName,
-              snippet: post?.text?.slice(0, 140) ?? '',
-            })
-          }
+          onPress={handleMoreMenu}
         />
       ),
     });
-  }, [navigation, postId, post?.authorUid, post?.text, displayName, theme.colors.onSurface]);
+  }, [navigation, postId, post?.authorUid, post?.text, displayName, theme.colors.onSurface, isAuthor]);
 
   // ✅ Early returns happen AFTER hooks + memos
   if (loading) {
