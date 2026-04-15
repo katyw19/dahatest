@@ -318,7 +318,7 @@ const GroupFeedScreen = () => {
               <Text style={styles.timeText}>{timeAgo}</Text>
             </View>
             <Text style={styles.subtitleText} numberOfLines={1}>
-              {[item.authorGradeTag, item.authorRole === 'admin' ? 'Admin' : ''].filter(Boolean).join(' · ')}
+              {[item.authorGradeTag && item.authorGradeTag !== 'Unknown' ? item.authorGradeTag : '', item.authorRole === 'admin' ? 'Admin' : ''].filter(Boolean).join(' · ')}
             </Text>
           </View>
 
@@ -530,12 +530,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   displayName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1C1C1E',
   },
   timeText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#C7C7CC',
   },
   subtitleText: {
