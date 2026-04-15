@@ -277,92 +277,86 @@ const GroupFeedScreen = () => {
       <Pressable
         onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
         style={({ pressed }) => [
-          styles.postRow,
-          { borderBottomColor: theme.colors.outlineVariant ?? theme.colors.outline },
-          pressed && { backgroundColor: theme.colors.surfaceVariant ?? '#f5f5f5' },
+          styles.postCard,
+          { backgroundColor: theme.colors.surface },
+          pressed && { opacity: 0.92 },
         ]}
       >
-        {/* Avatar */}
-        <Pressable
-          onPress={() => navigation.navigate('UserProfile', { uid: item.authorUid })}
-          hitSlop={4}
-        >
-          {photoURL ? (
-            <Image
-              source={{ uri: photoURL }}
-              style={styles.avatarImg}
-              cachePolicy="disk"
-              recyclingKey={item.authorUid}
-              transition={0}
-              placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
-            />
-          ) : (
-            <View style={[styles.avatarFallback, { backgroundColor: theme.colors.primary }]}>
-              <Text style={[styles.avatarInitials, { color: theme.colors.onPrimary }]}>
-                {getInitials(name)}
-              </Text>
-            </View>
-          )}
-        </Pressable>
+        {/* Header: avatar + name + time + status */}
+        <View style={styles.postHeader}>
+          <Pressable
+            onPress={() => navigation.navigate('UserProfile', { uid: item.authorUid })}
+            hitSlop={4}
+          >
+            {photoURL ? (
+              <Image
+                source={{ uri: photoURL }}
+                style={styles.avatarImg}
+                cachePolicy="disk"
+                recyclingKey={item.authorUid}
+                transition={0}
+                placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+              />
+            ) : (
+              <View style={[styles.avatarFallback, { backgroundColor: theme.colors.primary }]}>
+                <Text style={[styles.avatarInitials, { color: theme.colors.onPrimary }]}>
+                  {getInitials(name)}
+                </Text>
+              </View>
+            )}
+          </Pressable>
 
-        {/* Content */}
-        <View style={styles.postContent}>
-          {/* Name row */}
-          <View style={styles.nameRow}>
-            <View style={styles.nameGroup}>
+          <View style={styles.headerInfo}>
+            <View style={styles.nameTimeRow}>
               <Pressable
                 onPress={() => navigation.navigate('UserProfile', { uid: item.authorUid })}
                 hitSlop={4}
                 style={({ pressed }) => pressed && { opacity: 0.6 }}
               >
-                <Text style={[styles.displayName, { color: '#1C1C1E' }]} numberOfLines={1}>{name}</Text>
+                <Text style={styles.displayName} numberOfLines={1}>{name}</Text>
               </Pressable>
-              <Text style={[styles.subtitle, { color: '#6B7280' }]} numberOfLines={1}>
-                {subtitleParts.join(' · ')}
-              </Text>
+              <Text style={styles.timeText}>{timeAgo}</Text>
             </View>
-            <StatusPill status={item.status ?? 'open'} />
+            <Text style={styles.subtitleText} numberOfLines={1}>
+              {[item.authorGradeTag, item.authorRole === 'admin' ? 'Admin' : ''].filter(Boolean).join(' · ')}
+            </Text>
           </View>
 
-          {/* Post text */}
-          <Text style={styles.postText}>{item.text}</Text>
-
-          {/* Post photo */}
-          {item.photoUrl ? (
-            <Image
-              source={{ uri: item.photoUrl }}
-              style={[styles.postImage, { borderColor: theme.colors.outlineVariant ?? theme.colors.outline }]}
-              resizeMode="cover"
-            />
-          ) : null}
-
-          {/* Tags row */}
-          {(item.category || item.audienceTag || item.size) ? (
-            <View style={styles.tagsRow}>
-              {item.category ? (
-                <View style={[styles.tag, { backgroundColor: theme.colors.secondaryContainer ?? theme.colors.surface }]}>
-                  <Text style={[styles.tagText, { color: theme.colors.onSecondaryContainer ?? theme.colors.onSurface }]}>
-                    {item.category}
-                  </Text>
-                </View>
-              ) : null}
-              {item.size ? (
-                <View style={[styles.tag, { backgroundColor: theme.colors.secondaryContainer ?? theme.colors.surface }]}>
-                  <Text style={[styles.tagText, { color: theme.colors.onSecondaryContainer ?? theme.colors.onSurface }]}>
-                    {item.size}
-                  </Text>
-                </View>
-              ) : null}
-              {item.audienceTag ? (
-                <View style={[styles.tag, { backgroundColor: theme.colors.secondaryContainer ?? theme.colors.surface }]}>
-                  <Text style={[styles.tagText, { color: theme.colors.onSecondaryContainer ?? theme.colors.onSurface }]}>
-                    {item.audienceTag}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          ) : null}
+          <StatusPill status={item.status ?? 'open'} />
         </View>
+
+        {/* Body */}
+        <Text style={styles.postText}>{item.text}</Text>
+
+        {/* Photo */}
+        {item.photoUrl ? (
+          <Image
+            source={{ uri: item.photoUrl }}
+            style={styles.postImage}
+            contentFit="cover"
+          />
+        ) : null}
+
+        {/* Footer: tags */}
+        {(item.category || item.audienceTag || item.size) ? (
+          <View style={styles.tagsRow}>
+            {item.audienceTag ? (
+              <View style={[styles.tag, { backgroundColor: '#F0F0F0' }]}>
+                <Text style={styles.tagText}>{item.audienceTag}</Text>
+              </View>
+            ) : null}
+            {item.category ? (
+              <View style={[styles.tag, { backgroundColor: '#F0F0F0' }]}>
+                <Text style={styles.tagText}>{item.category}</Text>
+              </View>
+            ) : null}
+            {item.size ? (
+              <View style={[styles.tag, { backgroundColor: '#F0F0F0' }]}>
+                <Text style={styles.tagText}>Size {item.size}</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
       </Pressable>
     );
   };
@@ -489,83 +483,89 @@ const GroupFeedScreen = () => {
 const styles = StyleSheet.create({
   list: {
     paddingBottom: 80,
+    paddingHorizontal: SPACING.sm,
+    gap: 10,
   },
   listHeader: {
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: SPACING.xs,
     paddingTop: SPACING.lg,
-    paddingBottom: SPACING.md,
+    paddingBottom: SPACING.sm,
     gap: SPACING.sm,
   },
-  postRow: {
+
+  /* Post card */
+  postCard: {
+    borderRadius: RADIUS.lg,
+    padding: 14,
+    gap: 10,
+  },
+  postHeader: {
     flexDirection: 'row',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    gap: 10,
   },
   avatarImg: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    marginRight: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
   },
   avatarFallback: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    marginRight: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitials: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
   },
-  postContent: {
+  headerInfo: {
     flex: 1,
+    gap: 1,
   },
-  nameRow: {
+  nameTimeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  nameGroup: {
-    flex: 1,
-    marginRight: 8,
+    gap: 6,
   },
   displayName: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1C1C1E',
   },
-  subtitle: {
-    fontSize: 13,
-    marginTop: 1,
+  timeText: {
+    fontSize: 12,
+    color: '#C7C7CC',
+  },
+  subtitleText: {
+    fontSize: 12,
+    color: '#8E8E93',
   },
   postText: {
     fontSize: 15,
-    lineHeight: 22,
-    marginTop: 8,
+    lineHeight: 21,
+    color: '#1C1C1E',
   },
   postImage: {
     width: '100%',
-    height: 180,
+    height: 200,
     borderRadius: RADIUS.md,
-    marginTop: 10,
-    borderWidth: StyleSheet.hairlineWidth,
   },
   tagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginTop: 12,
   },
   tag: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 999,
   },
   tagText: {
     fontSize: 12,
     fontWeight: '500',
+    color: '#6B7280',
   },
   announcementWrap: {
     borderRadius: RADIUS.md,
@@ -599,12 +599,11 @@ const styles = StyleSheet.create({
     paddingLeft: 18,
   },
   sectionDivider: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 4,
+    paddingVertical: 6,
   },
   sectionLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
