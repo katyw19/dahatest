@@ -85,6 +85,20 @@ const GroupFeedScreen = () => {
     };
   }, [authorUids]);
 
+  // Prefetch profile photos so they appear instantly from cache
+  const [cachedPhotos, setCachedPhotos] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const urls = Object.values(profileMap)
+      .map((p: any) => p?.photoURL)
+      .filter((url): url is string => !!url && !cachedPhotos.has(url));
+    if (!urls.length) return;
+    urls.forEach((url) => {
+      Image.prefetch(url)
+        .then(() => setCachedPhotos((prev) => new Set([...prev, url])))
+        .catch(() => {});
+    });
+  }, [profileMap]);
+
   // ✅ Hooks MUST be above all early returns.
   const activeAnnouncements = useMemo(() => {
     const now = Date.now();
@@ -286,14 +300,15 @@ const GroupFeedScreen = () => {
           onPress={() => navigation.navigate('UserProfile', { uid: item.authorUid })}
           hitSlop={4}
         >
-          <View style={[styles.avatarFallback, { backgroundColor: theme.colors.primary }]}>
-            <Text style={[styles.avatarInitials, { color: theme.colors.onPrimary }]}>
-              {getInitials(name)}
-            </Text>
-            {photoURL ? (
-              <Image source={{ uri: photoURL }} style={styles.avatarImage} />
-            ) : null}
-          </View>
+          {photoURL && cachedPhotos.has(photoURL) ? (
+            <Image source={{ uri: photoURL }} style={styles.avatarImg} />
+          ) : (
+            <View style={[styles.avatarFallback, { backgroundColor: theme.colors.primary }]}>
+              <Text style={[styles.avatarInitials, { color: theme.colors.onPrimary }]}>
+                {getInitials(name)}
+              </Text>
+            </View>
+          )}
         </Pressable>
 
         {/* Content */}
@@ -493,6 +508,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  avatarImg: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    marginRight: 12,
+  },
   avatarFallback: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
@@ -500,13 +521,6 @@ const styles = StyleSheet.create({
     marginRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    ...StyleSheet.absoluteFillObject,
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
   },
   avatarInitials: {
     fontSize: 16,
