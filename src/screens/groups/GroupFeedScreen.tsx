@@ -286,15 +286,14 @@ const GroupFeedScreen = () => {
           onPress={() => navigation.navigate('UserProfile', { uid: item.authorUid })}
           hitSlop={4}
         >
-          {photoURL ? (
-            <Image source={{ uri: photoURL }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatarFallback, { backgroundColor: theme.colors.primary }]}>
-              <Text style={[styles.avatarInitials, { color: theme.colors.onPrimary }]}>
-                {getInitials(name)}
-              </Text>
-            </View>
-          )}
+          <View style={[styles.avatarFallback, { backgroundColor: theme.colors.primary }]}>
+            <Text style={[styles.avatarInitials, { color: theme.colors.onPrimary }]}>
+              {getInitials(name)}
+            </Text>
+            {photoURL ? (
+              <Image source={{ uri: photoURL }} style={styles.avatarImage} />
+            ) : null}
+          </View>
         </Pressable>
 
         {/* Content */}
@@ -494,12 +493,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  avatar: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    marginRight: 12,
-  },
   avatarFallback: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
@@ -507,6 +500,13 @@ const styles = StyleSheet.create({
     marginRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
   },
   avatarInitials: {
     fontSize: 16,
