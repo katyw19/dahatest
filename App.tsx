@@ -1,5 +1,6 @@
 import 'react-native-gesture-handler';
 import { useEffect, useRef } from 'react';
+import { Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
@@ -52,18 +53,20 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <ProfileProvider>
-          <GroupProvider>
-            <ThemeProvider>
-              <NotificationRegistrar />
-              <StatusBar style="auto" />
-              <RootNavigator />
-            </ThemeProvider>
-          </GroupProvider>
-        </ProfileProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <ProfileProvider>
+            <GroupProvider>
+              <ThemeProvider>
+                <NotificationRegistrar />
+                <StatusBar style="auto" />
+                <RootNavigator />
+              </ThemeProvider>
+            </GroupProvider>
+          </ProfileProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </TouchableWithoutFeedback>
   );
 }
