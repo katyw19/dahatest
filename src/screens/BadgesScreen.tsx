@@ -60,12 +60,28 @@ const BadgesScreen = () => {
   }, [badgesEarned, totalLends]);
 
   useEffect(() => {
+    // Wait until celebrated list is loaded from AsyncStorage before comparing
+    if (!celebratedLoadedRef.current) return;
+
     if (!didHydrateRef.current) {
+      // First run after both badge state + celebrated list loaded:
+      // mark all currently unlocked badges as celebrated so we don't
+      // re-show confetti for badges earned in previous sessions
       previousUnlocked.current = new Set(unlockedSet);
+
+      // Persist any unlocked badges that weren't already in celebrated set
+      const uncelebrated = [...unlockedSet].filter((id) => !celebratedSetRef.current.has(id));
+      if (uncelebrated.length > 0) {
+        uncelebrated.forEach((id) => celebratedSetRef.current.add(id));
+        const key = `daha_badge_celebrated_${user?.uid ?? 'user'}`;
+        AsyncStorage.setItem(key, JSON.stringify(Array.from(celebratedSetRef.current))).catch(() => {});
+      }
+
       didHydrateRef.current = true;
       return;
     }
-    if (!celebratedLoadedRef.current) return;
+
+    // After hydration: only celebrate badges that are genuinely NEW
     const newlyUnlocked = [...unlockedSet].filter((id) => !previousUnlocked.current.has(id));
     const toCelebrate = newlyUnlocked.filter((id) => !celebratedSetRef.current.has(id));
     if (toCelebrate.length > 0) {
