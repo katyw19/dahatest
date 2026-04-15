@@ -153,13 +153,16 @@ const ChatThreadScreen = ({ route, navigation }: Props) => {
   const resetReviewForm = () => { setReviewError(null); setReviewOutcome(''); setReviewNote(''); };
 
   const goToChatsList = () => {
-    const tab = navigation.getParent()?.getParent?.() ?? navigation.getParent();
-    if (tab) { tab.navigate('ChatsTab' as never); } else { navigation.goBack(); }
+    // Pop back to root of current stack first, then switch tab
+    navigation.popToTop();
+    const tab = navigation.getParent?.();
+    if (tab) { tab.navigate('ChatsTab' as never); }
   };
 
   const goToFeed = () => {
-    const tab = navigation.getParent()?.getParent?.() ?? navigation.getParent();
-    if (tab) { tab.navigate('FeedTab' as never); } else { navigation.goBack(); }
+    navigation.popToTop();
+    const tab = navigation.getParent?.();
+    if (tab) { tab.navigate('FeedTab' as never); }
   };
 
   useLayoutEffect(() => {
