@@ -505,19 +505,19 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   avatarImg: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
   },
   avatarFallback: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitials: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   headerInfo: {
