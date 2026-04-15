@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
 import { IconButton, Text, useTheme, FAB, Button, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -84,23 +85,6 @@ const GroupFeedScreen = () => {
       if (unsub) unsub();
     };
   }, [authorUids]);
-
-  // Prefetch all profile photos before showing the feed
-  const [photosReady, setPhotosReady] = useState(false);
-  useEffect(() => {
-    if (loading) { setPhotosReady(false); return; }
-    const urls = Object.values(profileMap)
-      .map((p: any) => p?.photoURL)
-      .filter(Boolean) as string[];
-    if (!urls.length) { setPhotosReady(true); return; }
-    // Prefetch all, but don't wait forever — 800ms max
-    const timeout = setTimeout(() => setPhotosReady(true), 800);
-    Promise.all(urls.map((u) => Image.prefetch(u).catch(() => {})))
-      .then(() => setPhotosReady(true))
-      .catch(() => setPhotosReady(true))
-      .finally(() => clearTimeout(timeout));
-    return () => clearTimeout(timeout);
-  }, [loading, profileMap]);
 
   // ✅ Hooks MUST be above all early returns.
   const activeAnnouncements = useMemo(() => {
@@ -217,7 +201,7 @@ const GroupFeedScreen = () => {
     );
   }
 
-  if (loading || !photosReady) {
+  if (loading) {
     return (
       <View style={[styles.center, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator />
@@ -303,16 +287,22 @@ const GroupFeedScreen = () => {
           onPress={() => navigation.navigate('UserProfile', { uid: item.authorUid })}
           hitSlop={4}
         >
-          <View style={[styles.avatarFallback, { backgroundColor: photoURL ? '#E5E5EA' : theme.colors.primary }]}>
-            {!photoURL ? (
+          {photoURL ? (
+            <Image
+              source={{ uri: photoURL }}
+              style={styles.avatarImg}
+              cachePolicy="disk"
+              recyclingKey={item.authorUid}
+              transition={0}
+              placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+            />
+          ) : (
+            <View style={[styles.avatarFallback, { backgroundColor: theme.colors.primary }]}>
               <Text style={[styles.avatarInitials, { color: theme.colors.onPrimary }]}>
                 {getInitials(name)}
               </Text>
-            ) : null}
-            {photoURL ? (
-              <Image source={{ uri: photoURL }} style={styles.avatarOverlayImg} />
-            ) : null}
-          </View>
+            </View>
+          )}
         </Pressable>
 
         {/* Content */}
@@ -512,6 +502,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  avatarImg: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    marginRight: 12,
+  },
   avatarFallback: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
@@ -519,13 +515,6 @@ const styles = StyleSheet.create({
     marginRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  avatarOverlayImg: {
-    ...StyleSheet.absoluteFillObject,
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
   },
   avatarInitials: {
     fontSize: 16,
