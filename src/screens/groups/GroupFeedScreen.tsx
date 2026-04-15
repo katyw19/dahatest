@@ -505,19 +505,19 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   avatarImg: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
   },
   avatarFallback: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitials: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   headerInfo: {
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   displayName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#1C1C1E',
   },
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
     color: '#C7C7CC',
   },
   subtitleText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#8E8E93',
   },
   postText: {
