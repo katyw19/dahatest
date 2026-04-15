@@ -85,6 +85,23 @@ const GroupFeedScreen = () => {
     };
   }, [authorUids]);
 
+  // Prefetch all profile photos before showing the feed
+  const [photosReady, setPhotosReady] = useState(false);
+  useEffect(() => {
+    if (loading) { setPhotosReady(false); return; }
+    const urls = Object.values(profileMap)
+      .map((p: any) => p?.photoURL)
+      .filter(Boolean) as string[];
+    if (!urls.length) { setPhotosReady(true); return; }
+    // Prefetch all, but don't wait forever — 800ms max
+    const timeout = setTimeout(() => setPhotosReady(true), 800);
+    Promise.all(urls.map((u) => Image.prefetch(u).catch(() => {})))
+      .then(() => setPhotosReady(true))
+      .catch(() => setPhotosReady(true))
+      .finally(() => clearTimeout(timeout));
+    return () => clearTimeout(timeout);
+  }, [loading, profileMap]);
+
   // ✅ Hooks MUST be above all early returns.
   const activeAnnouncements = useMemo(() => {
     const now = Date.now();
@@ -200,7 +217,7 @@ const GroupFeedScreen = () => {
     );
   }
 
-  if (loading) {
+  if (loading || !photosReady) {
     return (
       <View style={[styles.center, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator />
