@@ -44,3 +44,6 @@ yarn-error.*
 # Firebase Cloud Functions
 functions/lib/
 functions/node_modules/
+
+# Claude Code workspace
+.claude/
