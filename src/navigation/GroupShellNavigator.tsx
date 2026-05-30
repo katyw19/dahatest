@@ -102,7 +102,7 @@ const ChatsStack = createNativeStackNavigator<GroupStackParamList>();
 const ProfileStack = createNativeStackNavigator<GroupStackParamList>();
 
 const FeedStackScreens = () => (
-  <FeedStack.Navigator>
+  <FeedStack.Navigator screenOptions={{ headerTitleAlign: 'left' }}>
     <FeedStack.Screen
       name="GroupFeed"
       component={GroupFeedScreen}
@@ -165,7 +165,7 @@ const FeedStackScreens = () => (
 );
 
 const RequestsStackScreens = () => (
-  <RequestsStack.Navigator>
+  <RequestsStack.Navigator screenOptions={{ headerTitleAlign: 'left' }}>
     <RequestsStack.Screen
       name="MyRequests"
       component={MyRequestsScreen}
@@ -228,7 +228,7 @@ const RequestsStackScreens = () => (
 );
 
 const ChatsStackScreens = () => (
-  <ChatsStack.Navigator>
+  <ChatsStack.Navigator screenOptions={{ headerTitleAlign: 'left' }}>
     <ChatsStack.Screen
       name="ChatsList"
       component={ChatsListScreen}
@@ -285,7 +285,7 @@ const ProfileStackScreens = () => {
   const theme = useTheme();
 
   return (
-    <ProfileStack.Navigator>
+    <ProfileStack.Navigator screenOptions={{ headerTitleAlign: 'left' }}>
       <ProfileStack.Screen
         name="Profile"
         component={ProfileTabScreen}
