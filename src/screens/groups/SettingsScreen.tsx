@@ -1,9 +1,9 @@
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import Screen from '../../components/Screen';
-import { SPACING, RADIUS } from '../../theme/spacing';
+import { SPACING } from '../../theme/spacing';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { GroupStackParamList } from '../../navigation/GroupShellNavigator';
 
@@ -12,109 +12,66 @@ type Props = NativeStackScreenProps<GroupStackParamList, 'Settings'>;
 type MenuItem = {
   icon: string;
   label: string;
-  description: string;
   onPress: () => void;
-  danger?: boolean;
 };
 
 const SettingsScreen = ({ navigation }: Props) => {
-  const theme = useTheme();
   const { signOut } = useAuth();
 
   const accountItems: MenuItem[] = [
-    {
-      icon: 'palette-outline',
-      label: 'Theme',
-      description: 'Change app colors and appearance',
-      onPress: () => navigation.navigate('ThemePicker'),
-    },
-    {
-      icon: 'lock-outline',
-      label: 'Change Password',
-      description: 'Update your account password',
-      onPress: () => navigation.navigate('ChangePassword' as any),
-    },
-    {
-      icon: 'account-edit-outline',
-      label: 'Edit Profile',
-      description: 'Update your name, photo, and bio',
-      onPress: () => navigation.navigate('EditProfile'),
-    },
-    {
-      icon: 'bell-outline',
-      label: 'Notifications',
-      description: 'Manage push notification preferences',
-      onPress: () => navigation.navigate('NotificationSettings' as any),
-    },
+    { icon: 'palette-outline', label: 'Theme', onPress: () => navigation.navigate('ThemePicker') },
+    { icon: 'account-edit-outline', label: 'Edit Profile', onPress: () => navigation.navigate('EditProfile') },
+    { icon: 'lock-outline', label: 'Change Password', onPress: () => navigation.navigate('ChangePassword' as any) },
+    { icon: 'bell-outline', label: 'Notifications', onPress: () => navigation.navigate('NotificationSettings' as any) },
   ];
 
   const supportItems: MenuItem[] = [
-    {
-      icon: 'shield-check-outline',
-      label: 'Privacy',
-      description: 'Privacy policy and data settings',
-      onPress: () => navigation.navigate('PrivacySettings' as any),
-    },
-    {
-      icon: 'information-outline',
-      label: 'About',
-      description: 'App version and credits',
-      onPress: () => navigation.navigate('About' as any),
-    },
+    { icon: 'shield-check-outline', label: 'Privacy', onPress: () => navigation.navigate('PrivacySettings' as any) },
+    { icon: 'information-outline', label: 'About', onPress: () => navigation.navigate('About' as any) },
   ];
 
-  const dangerItems: MenuItem[] = [
-    {
-      icon: 'logout',
-      label: 'Sign Out',
-      description: 'Sign out of your account',
-      onPress: () => {
-        Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Sign Out', style: 'destructive', onPress: () => signOut().catch(() => {}) },
-        ]);
-      },
-    },
-  ];
+  const handleSignOut = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign Out', style: 'destructive', onPress: () => signOut().catch(() => {}) },
+    ]);
+  };
 
-  const renderSection = (title: string, items: MenuItem[]) => (
-    <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: '#8E8E93' }]}>{title}</Text>
-      <View style={[styles.sectionCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
-        {items.map((item, i) => (
-          <Pressable
-            key={item.label}
-            onPress={item.onPress}
-            style={({ pressed }) => [
-              styles.menuItem,
-              pressed && { backgroundColor: `${theme.colors.primary}08` },
-              i < items.length - 1 && [styles.menuItemBorder, { borderBottomColor: theme.colors.outline }],
-            ]}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: item.danger ? '#FF3B3014' : `${theme.colors.primary}14` }]}>
-              <MaterialCommunityIcons
-                name={item.icon as any}
-                size={20}
-                color={item.danger ? '#FF3B30' : theme.colors.primary}
-              />
-            </View>
-            <View style={styles.menuText}>
-              <Text style={[styles.menuLabel, { color: item.danger ? '#FF3B30' : '#1C1C1E' }]}>{item.label}</Text>
-              <Text style={styles.menuDesc}>{item.description}</Text>
-            </View>
-            <MaterialCommunityIcons name="chevron-right" size={18} color="#C7C7CC" />
-          </Pressable>
-        ))}
-      </View>
-    </View>
+  const renderRow = (item: MenuItem, isLast: boolean) => (
+    <Pressable
+      key={item.label}
+      onPress={item.onPress}
+      style={({ pressed }) => [
+        styles.row,
+        !isLast && styles.rowBorder,
+        pressed && { opacity: 0.5 },
+      ]}
+    >
+      <MaterialCommunityIcons name={item.icon as any} size={18} color="#8E8E93" />
+      <Text style={styles.label}>{item.label}</Text>
+      <MaterialCommunityIcons name="chevron-right" size={16} color="#C7C7CC" />
+    </Pressable>
   );
 
   return (
     <Screen noTopPadding>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
-        {renderSection('Account', accountItems)}
-        {renderSection('Support', supportItems)}
-        {renderSection('', dangerItems)}
+        <Text style={styles.sectionHeader}>ACCOUNT</Text>
+        <View style={styles.list}>
+          {accountItems.map((item, i) => renderRow(item, i === accountItems.length - 1))}
+        </View>
+
+        <Text style={styles.sectionHeader}>SUPPORT</Text>
+        <View style={styles.list}>
+          {supportItems.map((item, i) => renderRow(item, i === supportItems.length - 1))}
+        </View>
+
+        <Pressable
+          onPress={handleSignOut}
+          style={({ pressed }) => [styles.signOutRow, pressed && { opacity: 0.5 }]}
+        >
+          <Text style={styles.signOutText}>Sign out</Text>
+        </Pressable>
       </ScrollView>
     </Screen>
   );
@@ -123,52 +80,50 @@ const SettingsScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: {
     paddingBottom: SPACING.xl,
-    paddingTop: SPACING.sm,
+    paddingTop: SPACING.md,
   },
-  section: {
-    marginBottom: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: 13,
+  sectionHeader: {
+    fontSize: 11,
     fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-    paddingHorizontal: 4,
+    letterSpacing: 1.5,
+    color: '#8E8E93',
+    marginTop: SPACING.lg,
+    marginBottom: 8,
+    marginHorizontal: 4,
   },
-  sectionCard: {
-    borderRadius: RADIUS.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
+  list: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: '#EBEBEB',
+    marginHorizontal: -SPACING.lg,
   },
-  menuItem: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
     paddingVertical: 14,
-    paddingHorizontal: SPACING.md,
+    gap: 14,
   },
-  menuItemBorder: {
+  rowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#EBEBEB',
   },
-  menuIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  menuText: {
+  label: {
     flex: 1,
-  },
-  menuLabel: {
-    fontSize: 16,
+    fontSize: 15,
+    color: '#1C1C1E',
     fontWeight: '500',
   },
-  menuDesc: {
-    fontSize: 12,
-    color: '#8E8E93',
-    marginTop: 1,
+  signOutRow: {
+    marginTop: SPACING.xl,
+    alignItems: 'center',
+    paddingVertical: 14,
+  },
+  signOutText: {
+    fontSize: 14,
+    color: '#1C1C1E',
+    fontWeight: '500',
+    letterSpacing: 0.3,
   },
 });
 
