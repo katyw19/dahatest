@@ -14,17 +14,15 @@ const StatusPill = ({ status }: Props) => {
     <View
       style={[
         styles.pill,
-        {
-          backgroundColor: isOpen ? `${theme.colors.primary}14` : '#F0F0F0',
-          borderColor: isOpen ? theme.colors.primary : '#D1D1D6',
-        },
+        { borderColor: isOpen ? theme.colors.primary : '#D1D1D6' },
       ]}
     >
       <Text
-        variant="labelSmall"
         style={{
           color: isOpen ? theme.colors.primary : '#8E8E93',
-          fontWeight: '600',
+          fontWeight: '500',
+          fontSize: 11,
+          letterSpacing: 0.3,
         }}
       >
         {label}
@@ -35,10 +33,10 @@ const StatusPill = ({ status }: Props) => {
 
 const styles = StyleSheet.create({
   pill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    borderWidth: StyleSheet.hairlineWidth,
     alignSelf: 'flex-start',
   },
 });
