@@ -1,59 +1,45 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeSettings, THEME_PREVIEWS } from '../../theme';
 import type { ThemeName } from '../../theme';
 import Screen from '../../components/Screen';
-import { RADIUS, SPACING } from '../../theme/spacing';
+import { SPACING } from '../../theme/spacing';
 
 const ThemePickerScreen = () => {
-  const theme = useTheme();
   const { themeName, setThemeName } = useThemeSettings();
-
   const themes = Object.keys(THEME_PREVIEWS) as ThemeName[];
 
   return (
     <Screen noTopPadding>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {themes.map((name) => {
-          const preview = THEME_PREVIEWS[name];
-          const selected = themeName === name;
-          return (
-            <Pressable
-              key={name}
-              onPress={() => setThemeName(name)}
-              style={({ pressed }) => [
-                styles.themeCard,
-                {
-                  backgroundColor: preview.surface,
-                  borderColor: selected ? preview.primary : '#E5E5E5',
-                  borderWidth: selected ? 2 : 1,
-                  opacity: pressed ? 0.85 : 1,
-                },
-              ]}
-            >
-              <View style={styles.row}>
-                {/* Color swatches */}
-                <View style={styles.swatchRow}>
-                  <View style={[styles.swatch, { backgroundColor: preview.background }]} />
-                  <View style={[styles.swatchLarge, { backgroundColor: preview.primary }]} />
-                </View>
+        <Text style={styles.sectionHeader}>ACCENT COLOR</Text>
+        <Text style={styles.sectionHint}>Choose a color that suits your style.</Text>
 
-                <View style={styles.labelWrap}>
-                  <Text style={[styles.label, { color: selected ? preview.primary : '#1C1C1E' }]}>
-                    {preview.label}
-                  </Text>
-                </View>
+        <View style={styles.list}>
+          {themes.map((name, idx) => {
+            const preview = THEME_PREVIEWS[name];
+            const selected = themeName === name;
 
+            return (
+              <Pressable
+                key={name}
+                onPress={() => setThemeName(name)}
+                style={({ pressed }) => [
+                  styles.row,
+                  idx < themes.length - 1 && styles.rowBorder,
+                  pressed && { opacity: 0.5 },
+                ]}
+              >
+                <View style={[styles.colorDot, { backgroundColor: preview.primary }]} />
+                <Text style={styles.label}>{preview.label}</Text>
                 {selected ? (
-                  <View style={[styles.checkCircle, { backgroundColor: preview.primary }]}>
-                    <MaterialCommunityIcons name="check" size={14} color="#fff" />
-                  </View>
+                  <MaterialCommunityIcons name="check" size={18} color={preview.primary} />
                 ) : null}
-              </View>
-            </Pressable>
-          );
-        })}
+              </Pressable>
+            );
+          })}
+        </View>
       </ScrollView>
     </Screen>
   );
@@ -62,46 +48,49 @@ const ThemePickerScreen = () => {
 const styles = StyleSheet.create({
   container: {
     paddingBottom: SPACING.xl,
-    gap: SPACING.sm,
+    paddingTop: SPACING.md,
   },
-  themeCard: {
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
+  sectionHeader: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1.5,
+    color: '#8E8E93',
+    marginBottom: 6,
+    marginHorizontal: 4,
+  },
+  sectionHint: {
+    fontSize: 13,
+    color: '#8E8E93',
+    marginBottom: 24,
+    marginHorizontal: 4,
+  },
+  list: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: '#EBEBEB',
+    marginHorizontal: -SPACING.lg,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: 16,
+    gap: 14,
   },
-  swatchRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginRight: 14,
+  rowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#EBEBEB',
   },
-  swatch: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-  },
-  swatchLarge: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-  },
-  labelWrap: {
-    flex: 1,
+  colorDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  checkCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    flex: 1,
+    fontSize: 15,
+    color: '#1C1C1E',
+    fontWeight: '500',
   },
 });
 

@@ -103,10 +103,26 @@ const palette = {
   },
 };
 
-export const getTheme = (name: ThemeName = 'default'): MD3Theme => {
+export const THEME_PREVIEWS: Record<ThemeName, { label: string; background: string; surface: string; primary: string }> = {
+  default: { label: 'Default', background: BG, surface: SURFACE, primary: '#4C6FFF' },
+  blossom: { label: 'Blossom', background: BG, surface: SURFACE, primary: '#C9567E' },
+  sky: { label: 'Sky', background: BG, surface: SURFACE, primary: '#4B7BFF' },
+  mint: { label: 'Mint', background: BG, surface: SURFACE, primary: '#67C8A4' },
+  sunset: { label: 'Sunset', background: BG, surface: SURFACE, primary: '#FF8A5B' },
+  lavender: { label: 'Lavender', background: BG, surface: SURFACE, primary: '#9C7CF2' },
+  peach: { label: 'Peach', background: BG, surface: SURFACE, primary: '#FF9D7D' },
+  ocean: { label: 'Ocean', background: BG, surface: SURFACE, primary: '#2B8A9E' },
+  berry: { label: 'Berry', background: BG, surface: SURFACE, primary: '#8B3A7C' },
+  sage: { label: 'Sage', background: BG, surface: SURFACE, primary: '#6B8F6B' },
+  mocha: { label: 'Mocha', background: BG, surface: SURFACE, primary: '#8B6F5C' },
+};
+
+type GetThemeOptions = { isDark?: boolean; accentColor?: string | null };
+
+export const getTheme = (name: ThemeName = 'default', _options?: GetThemeOptions): MD3Theme => {
   const swatch = palette[name].light;
   const base = MD3LightTheme;
-  const primary = swatch.primary;
+  const primary = _options?.accentColor ?? swatch.primary;
 
   return {
     ...base,

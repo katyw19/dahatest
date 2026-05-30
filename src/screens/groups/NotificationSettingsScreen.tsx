@@ -93,18 +93,19 @@ const NotificationSettingsScreen = () => {
         </View>
       ) : null}
 
-      <Text style={[styles.header, { color: '#8E8E93' }]}>PUSH NOTIFICATIONS</Text>
-      <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}>
+      <Text style={styles.header}>PUSH NOTIFICATIONS</Text>
+      <Text style={styles.sectionHint}>Choose which notifications you'd like to receive.</Text>
+      <View style={styles.list}>
         {rows.map((row, i) => (
           <View
             key={row.key}
             style={[
               styles.row,
-              i < rows.length - 1 && [styles.rowBorder, { borderBottomColor: theme.colors.outline }],
+              i < rows.length - 1 && styles.rowBorder,
             ]}
           >
             <View style={styles.rowText}>
-              <Text style={[styles.rowLabel, { color: '#1C1C1E' }]}>{row.label}</Text>
+              <Text style={styles.rowLabel}>{row.label}</Text>
               <Text style={styles.rowDesc}>{row.description}</Text>
             </View>
             <Switch
@@ -137,38 +138,49 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   header: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '600',
-    letterSpacing: 0.5,
+    letterSpacing: 1.5,
+    color: '#8E8E93',
+    marginTop: SPACING.md,
     marginBottom: 6,
     paddingHorizontal: 4,
   },
-  card: {
-    borderRadius: RADIUS.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
+  sectionHint: {
+    fontSize: 13,
+    color: '#8E8E93',
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  list: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: '#EBEBEB',
+    marginHorizontal: -SPACING.lg,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: SPACING.lg,
   },
   rowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#EBEBEB',
   },
   rowText: {
     flex: 1,
     marginRight: 12,
   },
   rowLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
+    color: '#1C1C1E',
   },
   rowDesc: {
     fontSize: 12,
     color: '#8E8E93',
-    marginTop: 1,
+    marginTop: 2,
   },
   footer: {
     fontSize: 12,
