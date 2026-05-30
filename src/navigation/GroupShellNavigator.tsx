@@ -402,7 +402,13 @@ const GroupShellNavigator = () => {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { borderTopWidth: 0, elevation: 6 },
+        tabBarStyle: {
+          borderTopWidth: 0.5,
+          borderTopColor: '#EBEBEB',
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
       }}
     >
     <Tab.Screen

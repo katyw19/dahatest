@@ -278,8 +278,8 @@ const GroupFeedScreen = () => {
         onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
         style={({ pressed }) => [
           styles.postCard,
-          { backgroundColor: theme.colors.surface },
-          pressed && { opacity: 0.92 },
+          { borderBottomColor: '#EBEBEB' },
+          pressed && { opacity: 0.6 },
         ]}
       >
         {/* Header: avatar + name + time + status */}
@@ -341,17 +341,17 @@ const GroupFeedScreen = () => {
         {(item.category || item.audienceTag || item.size) ? (
           <View style={styles.tagsRow}>
             {item.audienceTag ? (
-              <View style={[styles.tag, { backgroundColor: '#F0F0F0' }]}>
+              <View style={styles.tag}>
                 <Text style={styles.tagText}>{item.audienceTag}</Text>
               </View>
             ) : null}
             {item.category ? (
-              <View style={[styles.tag, { backgroundColor: '#F0F0F0' }]}>
+              <View style={styles.tag}>
                 <Text style={styles.tagText}>{item.category}</Text>
               </View>
             ) : null}
             {item.size ? (
-              <View style={[styles.tag, { backgroundColor: '#F0F0F0' }]}>
+              <View style={styles.tag}>
                 <Text style={styles.tagText}>Size {item.size}</Text>
               </View>
             ) : null}
@@ -483,21 +483,20 @@ const GroupFeedScreen = () => {
 const styles = StyleSheet.create({
   list: {
     paddingBottom: 80,
-    paddingHorizontal: SPACING.sm,
-    gap: 10,
   },
   listHeader: {
-    paddingHorizontal: SPACING.xs,
+    paddingHorizontal: SPACING.md,
     paddingTop: SPACING.lg,
-    paddingBottom: SPACING.sm,
+    paddingBottom: SPACING.md,
     gap: SPACING.sm,
   },
 
   /* Post card */
   postCard: {
-    borderRadius: RADIUS.lg,
-    padding: 14,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 16,
     gap: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   postHeader: {
     flexDirection: 'row',
@@ -558,20 +557,26 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   tag: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#D1D1D6',
   },
   tagText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     color: '#6B7280',
+    letterSpacing: 0.2,
   },
   announcementWrap: {
-    borderRadius: RADIUS.md,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 12,
     gap: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: '#EBEBEB',
+    marginHorizontal: -SPACING.md,
   },
   annTopRow: {
     flexDirection: 'row',
@@ -599,14 +604,18 @@ const styles = StyleSheet.create({
     paddingLeft: 18,
   },
   sectionDivider: {
-    paddingHorizontal: 4,
-    paddingVertical: 6,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: '#EBEBEB',
   },
   sectionLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
+    color: '#8E8E93',
   },
   center: {
     flex: 1,
@@ -616,21 +625,22 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#EBEBEB',
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 2,
+    paddingVertical: 12,
+    borderBottomWidth: 1.5,
     borderBottomColor: 'transparent',
   },
   tabItemActive: {
-    borderBottomWidth: 2,
+    borderBottomWidth: 1.5,
   },
   tabLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 2,
   },
   fab: {
     position: 'absolute',
