@@ -46,7 +46,7 @@ const WelcomeNoGroupScreen = () => {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.textBlock}>
         <Text style={styles.title} variant="headlineLarge">
-          Welcome to DAHA!
+          Welcome to loopd!
         </Text>
         <Text style={styles.subtitle} variant="titleMedium">
           Borrow and lend items safely within your school or community.

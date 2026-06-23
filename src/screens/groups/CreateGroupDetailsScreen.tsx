@@ -151,7 +151,7 @@ const CreateGroupDetailsScreen = () => {
         <View style={styles.section}>
           <Text variant="titleMedium">Grade tags (optional)</Text>
           <Text variant="bodySmall" style={styles.helperText}>
-            Optional: Which grades at your school/group will use DAHA? (Used for
+            Optional: Which grades at your school/group will use loopd? (Used for
             post audience tags later.)
           </Text>
           <View style={styles.chips}>

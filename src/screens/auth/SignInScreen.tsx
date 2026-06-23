@@ -66,7 +66,7 @@ const SignInScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* Title */}
-        <Text style={styles.title}>DAHA</Text>
+        <Text style={styles.title}>loopd</Text>
 
         {/* Error */}
         {error ? <Text style={styles.error}>{error}</Text> : null}
