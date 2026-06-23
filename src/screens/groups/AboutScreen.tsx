@@ -15,7 +15,7 @@ const AboutScreen = () => {
         <View style={[styles.iconCircle, { backgroundColor: `${theme.colors.primary}14` }]}>
           <MaterialCommunityIcons name="hand-heart-outline" size={40} color={theme.colors.primary} />
         </View>
-        <Text style={[styles.appName, { color: '#1C1C1E' }]}>loopd</Text>
+        <Text style={[styles.appName, { color: '#1C1C1E' }]}>fullcircl</Text>
         <Text style={styles.tagline}>Lending made easy between communities</Text>
         <Text style={styles.version}>Version {version}</Text>
       </View>

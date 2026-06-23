@@ -12,7 +12,7 @@ const DiagnosticsScreen = () => {
     useNavigation<NativeStackNavigationProp<AppStackParamList>>();
 
   const appName = useMemo(
-    () => Constants.expoConfig?.name ?? 'DAHA',
+    () => Constants.expoConfig?.name ?? 'fullcircl',
     []
   );
 

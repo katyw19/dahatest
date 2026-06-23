@@ -1,4 +1,4 @@
-# DAHA
+# fullcircl
 
 A community lending platform where people can borrow what they need or share what they're giving away.
 

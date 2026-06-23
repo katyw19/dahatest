@@ -77,7 +77,7 @@ const InvitePeopleScreen = ({ route, navigation }: Props) => {
     setError(null);
     try {
       await Share.share({
-        message: `Join my loopd group "${group.name}" with code ${group.inviteCode}.\n${deepLink}`,
+        message: `Join my fullcircl group "${group.name}" with code ${group.inviteCode}.\n${deepLink}`,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to share invite.');

@@ -15,7 +15,7 @@ const BootScreen = () => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Text style={styles.title} variant="headlineLarge">
-        DAHA ({environment})
+        fullcircl ({environment})
       </Text>
       <Text style={styles.subtitle} variant="titleMedium">
         Scaffold running.
